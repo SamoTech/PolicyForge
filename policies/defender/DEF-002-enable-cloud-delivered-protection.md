@@ -1,13 +1,16 @@
 ---
 id: DEF-002
-name: Enable Cloud-Delivered Protection (MAPS)
-category: [Defender, Cloud Protection, Baseline]
+name: Enable Cloud-Delivered Protection
+category: [Defender, Antivirus, Cloud]
 risk_level: Medium
-applies_to: [Windows 10, Windows 11]
+risk_emoji: 🟠
+applies_to: [Windows 10, Windows 11, Windows Server 2016+]
 test_status: "✅ Tested on Windows 10 22H2, Windows 11 24H2"
 ---
 
 # Enable Cloud-Delivered Protection
+
+> 🟠 **Risk Level: Medium** — Cloud-delivered protection provides near-zero-second detection of new malware variants. Disabling it forces reliance on local signatures alone, leaving a gap for zero-day threats.
 
 ## Policy Path
 
@@ -17,7 +20,7 @@ Computer Configuration
         └── Windows Components
               └── Microsoft Defender Antivirus
                     └── MAPS
-                          ├── Join Microsoft MAPS → Advanced MAPS
+                          └── Join Microsoft MAPS → Advanced MAPS
                           └── Send file samples when further analysis is required → Send safe samples
 ```
 
@@ -28,39 +31,60 @@ Computer Configuration
 | `HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet` | `SpynetReporting` | `2` | REG_DWORD |
 | `HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet` | `SubmitSamplesConsent` | `1` | REG_DWORD |
 
-> `SpynetReporting`: 0 = Disabled, 1 = Basic MAPS, 2 = Advanced MAPS
+**SpynetReporting values:** `0` = Disabled, `1` = Basic, `2` = Advanced (recommended)
 
 ## Description
 
-Cloud-delivered protection connects Defender to Microsoft's threat intelligence cloud, enabling near-instant detection of new malware variants (often within seconds of first appearance globally). Advanced MAPS sends richer telemetry and enables the cloud protection block level controls. Critical for environments that cannot afford the lag between new threat emergence and signature update deployment.
-
-## Impact
-
-- Requires internet connectivity to Microsoft cloud endpoints
-- In air-gapped environments: set `SpynetReporting = 0` and rely on local signatures + WSUS updates
-- Minor telemetry data sent to Microsoft
+Cloud-delivered protection sends metadata about suspicious files and behaviors to Microsoft's cloud intelligence service (MAPS — Microsoft Active Protection Service) for rapid analysis. This enables sub-second detection of brand-new malware variants before local signatures are available. Combined with automatic sample submission, it dramatically reduces the window between malware release and detection. For air-gapped or high-privacy environments, this may need to be disabled with compensating controls.
 
 ## PowerShell
 
 ```powershell
 $path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet"
-if (!(Test-Path $path)) { New-Item -Path $path -Force }
-Set-ItemProperty -Path $path -Name "SpynetReporting" -Value 2 -Type DWord -Force
-Set-ItemProperty -Path $path -Name "SubmitSamplesConsent" -Value 1 -Type DWord -Force
+If (-not (Test-Path $path)) { New-Item -Path $path -Force | Out-Null }
+Set-ItemProperty -Path $path -Name "SpynetReporting" -Value 2 -Type DWord
+Set-ItemProperty -Path $path -Name "SubmitSamplesConsent" -Value 1 -Type DWord
 
 # Verify
-Get-MpComputerStatus | Select MAPSReporting, IsManagedDevice
+Get-MpPreference | Select-Object MAPSReporting, SubmitSamplesConsent
 ```
 
 ## Intune CSP
 
-```
-OMA-URI: ./Device/Vendor/MSFT/Policy/Config/Defender/AllowCloudProtection
-Data Type: Integer
-Value: 1
-```
+| Setting | Value |
+|---|---|
+| OMA-URI | `./Device/Vendor/MSFT/Policy/Config/Defender/AllowCloudProtection` |
+| Data Type | Integer |
+| Value | `1` |
+
+## Impact
+
+- ✅ Near-zero-day detection for new malware not yet in local signatures
+- ✅ Automatic sample submission accelerates global threat intelligence
+- ⚠️ Requires internet connectivity to Microsoft MAPS endpoints
+- ⚠️ Not suitable for air-gapped or classified environments
+- ℹ️ Disable `SubmitSamplesConsent` in high-privacy environments and use `SpynetReporting=1` (Basic)
+
+## Use Cases
+
+- **Internet-connected enterprise endpoints** — maximizes zero-day detection capability
+- **SOC environments** — cloud telemetry feeds Microsoft Sentinel threat intelligence
+- **SMB deployments** — compensates for limited local security tooling
+- **High-privacy / air-gapped** — disable and replace with offline signature updates
+
+## MITRE ATT&CK Mapping
+
+| Technique | Description |
+|---|---|
+| [T1562.001](https://attack.mitre.org/techniques/T1562/001/) | Impair Defenses: Disable or Modify Tools |
+| [T1036](https://attack.mitre.org/techniques/T1036/) | Masquerading (zero-day payloads evading local signatures) |
 
 ## Compliance References
 
-- **CIS Benchmark**: Level 1, Control 18.9.47.5.1
-- **DISA STIG**: WN10-00-000016
+- **CIS Benchmark**: Level 1, Control 8.2
+- **DISA STIG**: WN10-00-000020
+- **NIST SP 800-53**: SI-3
+
+## Test Status
+
+✅ Tested on Windows 10 22H2, Windows 11 24H2

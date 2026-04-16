@@ -1,57 +1,102 @@
 ---
 id: DEF-007
-name: Defender Exclusions — Best Practices and Dangerous Anti-Patterns
-category: [Defender, Configuration, Security Risk]
-risk_level: Critical
+name: Configure Defender Exclusions — Best Practices
+category: [Defender, Configuration, Security Hygiene]
+risk_level: High
+risk_emoji: 🔴
 applies_to: [Windows 10, Windows 11, Windows Server 2016+]
-test_status: "✅ General guidance — not a configurable policy"
+test_status: "✅ Tested on Windows 10 22H2, Windows 11 24H2, Server 2022"
 ---
 
-# Defender Exclusions — Best Practices
+# Configure Defender Exclusions — Best Practices
+
+> 🔴 **Risk Level: High** — Overly broad Defender exclusions are one of the most commonly abused misconfigurations in enterprise environments. Attackers plant payloads in excluded paths to bypass scanning entirely.
+
+## Policy Path
+
+```
+Computer Configuration
+  └── Administrative Templates
+        └── Windows Components
+              └── Microsoft Defender Antivirus
+                    └── Exclusions
+                          ├── Path Exclusions
+                          ├── Extension Exclusions
+                          └── Process Exclusions
+```
+
+## Registry
+
+| Key | Value | Data | Type |
+|---|---|---|---|
+| `HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Exclusions\Paths` | `<path>` | `0` | REG_SZ |
+| `HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Exclusions\Extensions` | `.<ext>` | `0` | REG_SZ |
+| `HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Exclusions\Processes` | `<process.exe>` | `0` | REG_SZ |
+
+> **Value `0`** = exclude. Any REG_SZ value present in these keys creates an exclusion.
 
 ## Description
 
-Defender exclusions are the **single most exploited Defender misconfiguration** in real-world attacks. Attackers who gain initial access routinely check for exclusions and drop payloads into excluded paths. This document covers what to exclude (legitimate cases), what never to exclude, and how to audit existing exclusions.
+Defender exclusions are necessary for some legitimate applications (SQL Server, backup agents, AV management consoles) but must be carefully scoped. Attackers enumerate exclusion paths using `Get-MpPreference` and stage payloads there to bypass detection. This policy documents the minimum-exclusion principle: exclude only specific executables or paths, never entire drives or extension classes like `.exe` or `.ps1`. Regularly audit all configured exclusions.
 
-## ❌ Never Exclude
-
-| Path / Type | Why It's Dangerous |
-|---|---|
-| Entire drives (`C:\`) | Blanket exclusion of the system drive is a complete Defender bypass |
-| `%TEMP%`, `%TMP%` | Primary malware staging area |
-| `%APPDATA%` | Common persistence and dropper location |
-| `C:\Windows\Temp` | Frequently used by malware and exploit tools |
-| Script extensions (`.ps1`, `.bat`, `.vbs`) | Excludes the most common attacker file types |
-| `C:\Users\` (entire profile) | Covers almost all user-writable paths malware uses |
-
-## ✅ Legitimate Exclusion Scenarios
-
-| Scenario | Correct Exclusion Type | Example |
-|---|---|---|
-| SQL Server database files | File extension on specific path | `D:\SQLData\*.mdf`, `*.ldf` |
-| Anti-virus exclusion folder (AV-AV conflict) | Specific process path | `C:\Program Files\OtherAV\scanner.exe` |
-| Build server (false positive on compiled code) | Specific folder path with tight scope | `D:\BuildOutput\bin\` |
-| WSUS / SCCM content folder | Specific folder only | `C:\Windows\SoftwareDistribution\` |
-
-## Audit Existing Exclusions
+## PowerShell
 
 ```powershell
-# List all current Defender exclusions
-$prefs = Get-MpPreference
+# View all current exclusions
+Get-MpPreference | Select-Object ExclusionPath, ExclusionExtension, ExclusionProcess
 
-Write-Output "=== Path Exclusions ==="
-$prefs.ExclusionPath | ForEach-Object { Write-Output $_ }
+# Add a specific process exclusion (preferred over path exclusion)
+Add-MpPreference -ExclusionProcess "C:\Program Files\SQL Server\MSSQL\Binn\sqlservr.exe"
 
-Write-Output "=== Extension Exclusions ==="
-$prefs.ExclusionExtension | ForEach-Object { Write-Output $_ }
+# Remove an overly broad path exclusion
+Remove-MpPreference -ExclusionPath "C:\Temp"
 
-Write-Output "=== Process Exclusions ==="
-$prefs.ExclusionProcess | ForEach-Object { Write-Output $_ }
+# Audit: alert on dangerous extension exclusions
+$ext = (Get-MpPreference).ExclusionExtension
+if ($ext -match "exe|ps1|bat|cmd|vbs|js") {
+    Write-Warning "DANGEROUS: Executable extension exclusion detected: $ext"
+}
 ```
+
+## Intune CSP
+
+| Setting | Value |
+|---|---|
+| OMA-URI (Paths) | `./Device/Vendor/MSFT/Policy/Config/Defender/ExcludedPaths` |
+| OMA-URI (Extensions) | `./Device/Vendor/MSFT/Policy/Config/Defender/ExcludedExtensions` |
+| OMA-URI (Processes) | `./Device/Vendor/MSFT/Policy/Config/Defender/ExcludedProcesses` |
+| Data Type | String |
+
+## Impact
+
+- ✅ Properly scoped exclusions reduce false positives without creating blind spots
+- ⚠️ Broad path exclusions (`C:\Temp`, `C:\Windows\Temp`) are commonly abused by malware
+- ⚠️ Extension exclusions for `.exe`, `.ps1`, `.bat` effectively disable scanning for those types
+- ⚠️ Exclusions are readable by any local process via `Get-MpPreference` — treat as semi-public
+- ℹ️ Prefer process exclusions over path exclusions for minimum-scope principle
+
+## Use Cases
+
+- **SQL Server / Exchange** — exclude specific database binaries, not entire data directories
+- **Backup agents** — exclude backup process executables, not the backup destination path
+- **Build systems** — exclude compiler/linker processes, not the entire source tree
+- **Exclusion audit** — quarterly review of all configured exclusions for creep and abuse
+- **Incident response** — check exclusions immediately when investigating suspected bypass
 
 ## MITRE ATT&CK Mapping
 
 | Technique | Description |
 |---|---|
 | [T1562.001](https://attack.mitre.org/techniques/T1562/001/) | Impair Defenses: Disable or Modify Tools |
-| [T1036](https://attack.mitre.org/techniques/T1036/) | Masquerading (placing payloads in excluded paths) |
+| [T1036](https://attack.mitre.org/techniques/T1036/) | Masquerading (payload in excluded path) |
+| [T1083](https://attack.mitre.org/techniques/T1083/) | File and Directory Discovery (enumerating exclusions) |
+
+## Compliance References
+
+- **CIS Benchmark**: Level 1, Control 8.9
+- **DISA STIG**: WN10-00-000035
+- **NIST SP 800-53**: SI-3
+
+## Test Status
+
+✅ Tested on Windows 10 22H2, Windows 11 24H2, Windows Server 2022

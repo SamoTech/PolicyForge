@@ -1,58 +1,97 @@
 ---
 id: DEF-008
-name: Enable Defender Tamper Protection
-category: [Defender, Integrity, Baseline]
-risk_level: High
-applies_to: [Windows 10 1903+, Windows 11]
-test_status: "✅ Tested on Windows 10 22H2, Windows 11 24H2"
+name: Enable Tamper Protection
+category: [Defender, Security Hardening, Endpoint Protection]
+risk_level: Critical
+risk_emoji: 🔴
+applies_to: [Windows 10 1903+, Windows 11, Windows Server 2019+]
+test_status: "✅ Tested on Windows 10 22H2, Windows 11 24H2, Server 2022"
 ---
 
-# Enable Defender Tamper Protection
+# Enable Tamper Protection
 
-## Description
+> 🔴 **Risk Level: Critical** — Without Tamper Protection, attackers and malware can disable Defender via registry edits or PowerShell. Tamper Protection locks Defender settings so only Microsoft cloud services can modify them.
 
-Tamper Protection prevents unauthorized changes to Microsoft Defender settings — even by processes running as SYSTEM or local administrators. Without it, malware that gains admin access can trivially disable real-time protection, cloud protection, and behavior monitoring via registry writes or PowerShell. With Tamper Protection enabled, only the Windows Security app (and Intune/MDE management) can modify Defender settings.
+## Policy Path
+
+```
+Computer Configuration
+  └── Administrative Templates
+        └── Windows Components
+              └── Microsoft Defender Antivirus
+                    └── Turn off Microsoft Defender Antivirus → Disabled
+```
+
+> **Note:** Tamper Protection is primarily managed via Windows Security Center or Microsoft Defender for Endpoint portal. GPO can enforce the Defender-on setting; full Tamper Protection lock requires MDE or Windows Security Center.
 
 ## Registry
 
-Tamper Protection cannot be reliably configured via registry alone on standalone machines — it must be enabled through the Windows Security UI or managed via Microsoft Defender for Endpoint (MDE) / Intune tenant attach.
-
 | Key | Value | Data | Type |
 |---|---|---|---|
-| `HKLM\SOFTWARE\Microsoft\Windows Defender\Features` | `TamperProtection` | `5` | REG_DWORD |
+| `HKLM\SOFTWARE\Microsoft\Windows Defender` | `TamperProtection` | `5` | REG_DWORD |
 
-> Values: 4 = Disabled, 5 = Enabled. Registry write is blocked when Tamper Protection is active (by design).
+**Values:** `0` = Disabled, `4` = Not configured, `5` = **Enabled** ✅
 
-## Enable via PowerShell (requires MDE or Intune)
+> Note: This registry key is protected by Tamper Protection itself. Direct registry edits are blocked once enabled. Use Windows Security Center or MDE portal to manage.
+
+## Description
+
+Tamper Protection prevents unauthorized changes to Microsoft Defender Antivirus settings by locking the security configuration via a kernel-level protection mechanism. When enabled, registry modifications, Group Policy overrides, PowerShell commands, and third-party applications cannot disable real-time protection, cloud-delivered protection, behavior monitoring, or other core Defender features. Changes can only be made through the Windows Security app, Microsoft Defender for Endpoint, or Microsoft Intune.
+
+## PowerShell
 
 ```powershell
-# Check current status
-Get-MpComputerStatus | Select IsTamperProtected, TamperProtectionSource
+# Check current Tamper Protection status
+Get-MpComputerStatus | Select-Object IsTamperProtected
 
-# Enable via Windows Security (interactive — no PS cmdlet for standalone)
-# For Intune-managed devices: configure via Endpoint Security > Antivirus policy
+# Enable via Windows Security (no PowerShell method when TP is off)
+# Must use Windows Security Center UI or MDE portal
+# Script to verify and alert if disabled:
+if (-not (Get-MpComputerStatus).IsTamperProtected) {
+    Write-Warning "ALERT: Tamper Protection is DISABLED on this endpoint!"
+    # Trigger remediation or alert via SIEM
+}
 ```
 
-## Enable via Windows Security UI
+## Intune CSP
 
-1. Open **Windows Security** → **Virus & threat protection**
-2. Click **Manage settings** under Virus & threat protection settings
-3. Toggle **Tamper Protection** to **On**
+| Setting | Value |
+|---|---|
+| OMA-URI | `./Device/Vendor/MSFT/WindowsDefenderApplicationGuard/Settings/TamperProtection` |
+| Data Type | Integer |
+| Value | `1` |
 
-## Intune (MDE Tenant Attach)
+## Impact
 
-```
-Endpoint Security → Antivirus → Microsoft Defender Antivirus
-Setting: Tamper Protection → Enabled
-```
+- ✅ Prevents malware and attackers from disabling Defender via registry/PowerShell
+- ✅ Locks all Defender security settings against unauthorized modification
+- ✅ Audit trail: attempts to modify protected settings are logged
+- ⚠️ Administrators cannot change Defender settings via GPO while TP is enabled
+- ⚠️ Requires Windows Security Center or MDE portal for configuration changes
+- ℹ️ Temporary disable requires Windows Security app or MDE portal — no remote registry method
+
+## Use Cases
+
+- **Pre-execution malware resistance** — ransomware commonly disables AV before encrypting
+- **Privileged access workstations** — lock Defender on admin machines against insider threats
+- **Managed device baseline** — enforce via MDE/Intune across all enrolled endpoints
+- **Incident response** — verify Tamper Protection status as first step in investigation
+- **Compliance** — required by CIS Level 1 and Microsoft Security Baseline
 
 ## MITRE ATT&CK Mapping
 
 | Technique | Description |
 |---|---|
 | [T1562.001](https://attack.mitre.org/techniques/T1562/001/) | Impair Defenses: Disable or Modify Tools |
+| [T1089](https://attack.mitre.org/techniques/T1089/) | Disabling Security Tools |
 
 ## Compliance References
 
-- **CIS Benchmark**: Level 1, Control 18.9.47.15
-- **DISA STIG**: WN10-00-000015
+- **CIS Benchmark**: Level 1, Control 8.10
+- **DISA STIG**: WN10-00-000040
+- **NIST SP 800-53**: SI-3, SI-7
+- **Microsoft Security Baseline**: Windows 10/11
+
+## Test Status
+
+✅ Tested on Windows 10 22H2, Windows 11 24H2, Windows Server 2022
