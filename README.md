@@ -13,9 +13,10 @@
   <a href="https://github.com/SamoTech/PolicyForge/stargazers"><img src="https://img.shields.io/github/stars/SamoTech/PolicyForge?style=flat-square&color=gold" alt="Stars"/></a>
   <a href="https://github.com/SamoTech/PolicyForge/graphs/contributors"><img src="https://img.shields.io/github/contributors/SamoTech/PolicyForge?style=flat-square&color=teal" alt="Contributors"/></a>
   <a href="https://github.com/SamoTech/PolicyForge/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT License"/></a>
-  <img src="https://img.shields.io/badge/policies-50%2B-brightgreen?style=flat-square" alt="50+ Policies"/>
+  <img src="https://img.shields.io/badge/policies-43%2B-brightgreen?style=flat-square" alt="43 Policies"/>
   <img src="https://img.shields.io/badge/status-active-success?style=flat-square" alt="Active"/>
   <img src="https://img.shields.io/badge/MITRE%20ATT%26CK-mapped-red?style=flat-square" alt="MITRE"/>
+  <img src="https://img.shields.io/badge/schema-v1.0-purple?style=flat-square" alt="Schema v1.0"/>
 </p>
 
 ---
@@ -37,7 +38,7 @@ PolicyForge is an open-source intelligence platform for **Microsoft Group Policy
 
 | Feature | Status |
 |---|---|
-| 50+ policies indexed with context, impact & use cases | ✅ Live |
+| 43 policies indexed with context, impact & use cases | ✅ Live |
 | MITRE ATT&CK mapping for every security policy | ✅ Live |
 | 50 GPO → Intune OMA-URI translations | ✅ Live |
 | Registry ↔ PowerShell reference | ✅ Live |
@@ -48,6 +49,8 @@ PolicyForge is an open-source intelligence platform for **Microsoft Group Policy
 | Gaming optimization template | ✅ Live |
 | Kiosk / lockdown template | ✅ Live |
 | Red team evasion research (MITRE-mapped) | ✅ Live |
+| Microsoft Edge security policies (EDGE-001→005) | ✅ Live |
+| Microsoft Office macro security policies (OFFICE-001→005) | ✅ Live |
 | Web UI policy search dashboard | 🔜 Phase 3 |
 | AI policy recommendation engine | 🔜 Phase 4 |
 
@@ -63,7 +66,7 @@ PolicyForge is an open-source intelligence platform for **Microsoft Group Policy
    └── ADMX parser engine (automation/admx-parser/)
 
 ✅ Phase 2 — Scale (Complete)
-   ├── 50+ policies across Windows Security, Privacy, Defender
+   ├── 43 policies across Windows Security, Privacy, Defender, Edge, Office
    ├── 50 GPO → Intune OMA-URI translation mappings
    ├── PowerShell translation engine (GPO → Intune CSV export)
    ├── Policy Diff Tracker (automation/policy-diff/)
@@ -98,12 +101,13 @@ PolicyForge is an open-source intelligence platform for **Microsoft Group Policy
 PolicyForge/
 │
 ├── 📁 policies/
-│   ├── windows/security/     # 17+ hardening policies (WIN-SECURITY-xxx)
+│   ├── windows/security/     # 19 hardening policies (WIN-SECURITY-001→019)
 │   ├── windows/privacy/      # Telemetry, Cortana, OneDrive
 │   ├── windows/network/      # WPAD and network isolation
-│   ├── defender/             # 10 Defender policies (DEF-001 → DEF-010)
-│   ├── edge/                 # (Phase 3)
-│   └── server/               # (Phase 3)
+│   ├── defender/             # 10 Defender policies (DEF-001→DEF-010)
+│   ├── edge/                 # 5 Edge browser policies (EDGE-001→EDGE-005)
+│   ├── office/               # 5 Office macro policies (OFFICE-001→OFFICE-005)
+│   └── server/               # Windows Server policies (Phase 3)
 │
 ├── 📁 templates/
 │   ├── security-baselines/   # Enterprise baseline (CIS L2 / STIG)
@@ -121,13 +125,29 @@ PolicyForge/
 │   └── policy-diff/          # Windows version diff tracker
 │
 ├── 📁 dashboards/
-│   └── web-ui/               # (Phase 3 — Next.js)
+│   └── web-ui/               # Phase 3 — Next.js
 │
 ├── README.md
 ├── CONTRIBUTING.md
+├── CHANGELOG.md
+├── SECURITY.md
 ├── POLICY_SCHEMA.json
 └── LICENSE
 ```
+
+---
+
+## 🗂️ Policy Index
+
+| Category | Count | Directory |
+|---|---|---|
+| Windows Security | 19 | `policies/windows/security/` |
+| Microsoft Defender | 10 | `policies/defender/` |
+| Microsoft Office | 5 | `policies/office/` |
+| Microsoft Edge | 5 | `policies/edge/` |
+| Windows Privacy | 3 | `policies/windows/privacy/` |
+| Windows Network | 1 | `policies/windows/network/` |
+| **Total** | **43** | |
 
 ---
 
@@ -136,11 +156,12 @@ PolicyForge/
 | Goal | PolicyForge Resource |
 |---|---|
 | Harden endpoints against ransomware | `templates/enterprise-hardening/` + `policies/defender/DEF-006` |
-| Migrate GPO to Intune | `translations/gpo-to-intune/windows-security.md` + `translation-engine.ps1` |
-| Block LLMNR poisoning attacks | `policies/windows/security/WIN-SECURITY-012` |
+| Block macro malware (Emotet/QakBot) | `policies/office/OFFICE-001` + `policies/office/OFFICE-002` |
+| Migrate GPO to Intune | `translations/gpo-to-intune/windows-security.md` |
+| Block LLMNR poisoning attacks | `policies/windows/security/WIN-SECURITY-003` |
+| Enforce Edge SmartScreen for all users | `policies/edge/EDGE-003` |
 | Lock down a kiosk / POS terminal | `templates/kiosk-mode/` |
 | Find policies deprecated in Windows 11 | `automation/policy-diff/policy_diff.py` |
-| Understand what red teams look for | `templates/redteam-evasion/` |
 | Optimize a gaming PC via GPO | `templates/gaming-optimization/` |
 | Validate hardening post-deployment | `templates/enterprise-hardening/verify.ps1` |
 
@@ -154,9 +175,11 @@ PolicyForge/
 # Browse policies by category
 ls policies/defender/
 ls policies/windows/security/
+ls policies/edge/
+ls policies/office/
 
 # Every policy file includes: registry path, PowerShell, Intune CSP, MITRE mapping
-cat policies/defender/DEF-005-configure-attack-surface-reduction.md
+cat policies/office/OFFICE-002-block-macros-from-internet.md
 ```
 
 ### Run the ADMX Parser
@@ -176,26 +199,12 @@ python automation/admx-parser/admx_parser.py \
 # Then import CSV into: Intune > Devices > Configuration > Create > Custom
 ```
 
-### Diff Windows Versions
-
-```bash
-# Snapshot Windows 10 policy definitions
-python automation/policy-diff/policy_diff.py \
-  --scan-admx "C:\Windows\PolicyDefinitions" --out snapshots/win10.json
-
-# Compare against Windows 11 snapshot
-python automation/policy-diff/policy_diff.py \
-  --compare snapshots/win10.json snapshots/win11.json \
-  --labels "Windows-10" "Windows-11"
-```
-
 ### Verify Hardening Deployment
 
 ```powershell
 # Run as Administrator after applying enterprise hardening
 .\templates\enterprise-hardening\verify.ps1
 # Outputs PASS/FAIL/MISSING for 13 critical controls
-# Exports CSV report with timestamp
 ```
 
 ---
