@@ -1,3 +1,21 @@
-click>=8.0
-lxml>=4.9
-rich>=13.0
+# PolicyForge ADMX Parser — Dependencies
+# Core parsing uses Python stdlib only (xml.etree.ElementTree)
+# Optional packages below enhance output quality
+
+# Optional: rich terminal output with progress bars and colored tables
+# rich>=13.0.0
+
+# Optional: progress bar for large ADMX directories (500+ files)
+# tqdm>=4.66.0
+
+# Optional: YAML front-matter output format
+# pyyaml>=6.0.1
+
+# Optional: Excel export of parsed policies
+# openpyxl>=3.1.0
+
+# Optional: JSON schema validation of generated policy files
+# jsonschema>=4.21.0
+
+# Python version: 3.8+
+# No pip install required for basic usage — stdlib only
