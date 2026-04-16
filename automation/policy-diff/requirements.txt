@@ -1,0 +1,11 @@
+# PolicyForge Policy Diff Tracker — Dependencies
+# All stdlib except optional ones below
+
+# Optional: rich terminal output
+# rich>=13.0.0
+
+# Optional: Excel export
+# openpyxl>=3.1.0
+
+# Optional: progress bars for large ADMX dirs
+# tqdm>=4.66.0
