@@ -3,11 +3,14 @@ id: WIN-SECURITY-006
 name: Enable Windows Defender Credential Guard
 category: [Security, Credential Protection, Virtualization]
 risk_level: High
-applies_to: [Windows 10 Enterprise 1607+, Windows 11 Enterprise, Windows Server 2016+]
-test_status: "✅ Tested on Windows 11 24H2 Enterprise, Server 2022"
+risk_emoji: 🔴
+applies_to: [Windows 10 1607+, Windows 11, Windows Server 2016+]
+test_status: "✅ Tested on Windows 10 21H2+, Windows 11 24H2"
 ---
 
 # Enable Windows Defender Credential Guard
+
+> 🔴 **Risk Level: High** — Without Credential Guard, LSASS stores credentials in cleartext-accessible memory. Credential Guard isolates them in a hardware-backed secure enclave, blocking mimikatz-style attacks.
 
 ## Policy Path
 
@@ -17,6 +20,7 @@ Computer Configuration
         └── System
               └── Device Guard
                     └── Turn On Virtualization Based Security
+                          ├── Select Platform Security Level: Secure Boot and DMA Protection
                           └── Credential Guard Configuration: Enabled with UEFI lock
 ```
 
@@ -24,53 +28,73 @@ Computer Configuration
 
 | Key | Value | Data | Type |
 |---|---|---|---|
-| `HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard` | `EnableVirtualizationBasedSecurity` | `1` | REG_DWORD |
-| `HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard` | `LsaCfgFlags` | `1` | REG_DWORD |
-
-> `LsaCfgFlags`: 0 = Disabled, 1 = Enabled with UEFI lock, 2 = Enabled without lock
+| `HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard` | `EnableVirtualizationBasedSecurity` | `1` | REG_DWORD |
+| `HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard` | `RequirePlatformSecurityFeatures` | `3` | REG_DWORD |
+| `HKLM\SYSTEM\CurrentControlSet\Control\Lsa` | `LsaCfgFlags` | `1` | REG_DWORD |
 
 ## Description
 
-Credential Guard uses Virtualization Based Security (VBS) to isolate LSA secrets in a protected container inaccessible to the OS kernel. Directly prevents **Pass-the-Hash**, **Pass-the-Ticket**, and **mimikatz**-style credential extraction.
-
-## Impact
-
-- Requires UEFI Secure Boot + TPM 2.0 recommended
-- Not available on Home/Pro editions
-- Cannot be easily disabled once enabled with UEFI lock
+Windows Defender Credential Guard uses Virtualization Based Security (VBS) to isolate credential secrets (NTLM hashes, Kerberos tickets) in a protected container inaccessible to the main OS kernel. This defeats pass-the-hash, pass-the-ticket, and credential dumping tools like Mimikatz that rely on reading LSASS memory. Requires UEFI Secure Boot and hardware virtualization support (Intel VT-x / AMD-V).
 
 ## PowerShell
 
 ```powershell
-$path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard"
-if (!(Test-Path $path)) { New-Item -Path $path -Force }
-Set-ItemProperty -Path $path -Name "EnableVirtualizationBasedSecurity" -Value 1 -Type DWord -Force
-Set-ItemProperty -Path $path -Name "LsaCfgFlags" -Value 1 -Type DWord -Force
+# Enable Credential Guard via registry
+$dgPath = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard"
+$lsaPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa"
 
+Set-ItemProperty -Path $dgPath -Name "EnableVirtualizationBasedSecurity" -Value 1 -Type DWord
+Set-ItemProperty -Path $dgPath -Name "RequirePlatformSecurityFeatures" -Value 3 -Type DWord
+Set-ItemProperty -Path $lsaPath -Name "LsaCfgFlags" -Value 1 -Type DWord
+
+Write-Output "Credential Guard enabled. Reboot required."
+
+# Verify after reboot
 Get-CimInstance -ClassName Win32_DeviceGuard -Namespace root\Microsoft\Windows\DeviceGuard |
-  Select-Object SecurityServicesRunning, VirtualizationBasedSecurityStatus
+    Select-Object SecurityServicesRunning
 ```
 
 ## Intune CSP
 
-```
-OMA-URI: ./Device/Vendor/MSFT/Policy/Config/DeviceGuard/EnableVirtualizationBasedSecurity
-Value: 1
+| Setting | Value |
+|---|---|
+| OMA-URI | `./Device/Vendor/MSFT/Policy/Config/DeviceGuard/EnableVirtualizationBasedSecurity` |
+| Data Type | Integer |
+| Value | `1` |
 
-OMA-URI: ./Device/Vendor/MSFT/Policy/Config/DeviceGuard/LsaCfgFlags
-Value: 1
-```
+## Impact
+
+- ✅ Blocks pass-the-hash and pass-the-ticket attacks
+- ✅ Defeats Mimikatz credential dumping from LSASS
+- ✅ Protects Kerberos TGTs from extraction
+- ⚠️ Requires hardware virtualization — incompatible with nested VMs on Hyper-V hosts
+- ⚠️ Some older drivers may be incompatible with VBS — test before broad deployment
+- ⚠️ UEFI lock (`LsaCfgFlags=1`) makes disabling require physical access to BIOS
+- ℹ️ A reboot is required after enabling
+
+## Use Cases
+
+- **Active Directory environments** — critical protection against Kerberoasting and pass-the-hash
+- **Privileged access workstations (PAWs)** — mandatory on admin workstations
+- **Post-breach hardening** — deploy immediately after any credential theft incident
+- **High-security environments** — financial, government, healthcare endpoints
+- **Zero trust architecture** — device identity depends on uncorrupted credential chain
 
 ## MITRE ATT&CK Mapping
 
 | Technique | Description |
 |---|---|
 | [T1003.001](https://attack.mitre.org/techniques/T1003/001/) | OS Credential Dumping: LSASS Memory |
-| [T1550.002](https://attack.mitre.org/techniques/T1550/002/) | Pass the Hash |
-| [T1558](https://attack.mitre.org/techniques/T1558/) | Steal or Forge Kerberos Tickets |
+| [T1550.002](https://attack.mitre.org/techniques/T1550/002/) | Use Alternate Authentication Material: Pass the Hash |
+| [T1550.003](https://attack.mitre.org/techniques/T1550/003/) | Use Alternate Authentication Material: Pass the Ticket |
 
 ## Compliance References
 
+- **CIS Benchmark**: Level 2, Control 18.8.5.5
 - **DISA STIG**: WN10-00-000070
-- **CIS Benchmark**: Level 2, Control 18.8.5.1
-- **CMMC**: AC.2.006, IA.3.083
+- **NIST SP 800-171**: 3.13.16
+- **Microsoft Security Baseline**: Windows 11 — enabled by default on capable hardware
+
+## Test Status
+
+✅ Tested on Windows 10 21H2+, Windows 11 24H2

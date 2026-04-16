@@ -1,0 +1,36 @@
+name: Validate Policy Documents
+
+on:
+  push:
+    paths:
+      - 'policies/**'
+  pull_request:
+    paths:
+      - 'policies/**'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  validate:
+    name: Validate Policy Documents
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml jsonschema
+
+      - name: Run validator
+        run: python .github/scripts/validate_policies.py
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-report
+          path: validation-report.json
+          retention-days: 14

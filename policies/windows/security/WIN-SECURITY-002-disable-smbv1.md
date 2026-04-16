@@ -1,68 +1,75 @@
 ---
 id: WIN-SECURITY-002
 name: Disable SMBv1 Protocol
-category: [Security, Network, Critical Hardening]
+category: [Security, Network, Protocol Hardening]
 risk_level: Critical
-applies_to:
-  - Windows 7+ (all versions)
-  - Windows 10 (all versions)
-  - Windows 11 (all versions)
-  - Windows Server 2008+
+risk_emoji: 🔴
+applies_to: [Windows 7+, Windows 10, Windows 11, Windows Server 2008+]
 test_status: "✅ Tested on Windows 10 22H2, Windows 11 24H2, Server 2022"
 ---
 
 # Disable SMBv1 Protocol
 
-## Description
+> 🔴 **Risk Level: Critical** — SMBv1 is the attack vector for EternalBlue (MS17-010), used in WannaCry and NotPetya. Disable immediately on all systems.
 
-SMBv1 is a 30-year-old network file sharing protocol with **no encryption, no mutual authentication, and no integrity checking**. It was the primary vector for **WannaCry (2017)** and **NotPetya (2017)**, the most destructive ransomware campaigns in history. Microsoft has officially deprecated SMBv1. There is **no valid reason** to have SMBv1 enabled in any modern environment.
+## Policy Path
+
+```
+Computer Configuration
+  └── Administrative Templates
+        └── Network
+              └── Lanman Workstation
+                    └── Enable insecure guest logons → Disabled
+```
+
+> **Note:** SMBv1 has no native GPO toggle. Use PowerShell or the registry method below. MDM/Intune uses a custom OMA-URI.
 
 ## Registry
 
 | Key | Value | Data | Type |
 |---|---|---|---|
-| `HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters` | `SMB1` | `0` | REG_DWORD |
+| `HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters` | `SMB1` | `0` | REG_DWORD |
+
+## Description
+
+SMB version 1 is a legacy protocol (1983) with no encryption, no integrity validation, and multiple critical CVEs. It was exploited by EternalBlue (CVE-2017-0144) to spread WannaCry ransomware globally. Microsoft deprecated it in 2013 and recommends disabling it on all modern Windows systems.
+
+## PowerShell
+
+```powershell
+# Disable SMBv1 Server
+Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
+
+# Disable SMBv1 Client (Windows Feature)
+Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart
+
+# Verify
+Get-SmbServerConfiguration | Select-Object EnableSMB1Protocol
+```
+
+## Intune CSP
+
+| Setting | Value |
+|---|---|
+| OMA-URI | `./Device/Vendor/MSFT/Policy/Config/Connectivity/AllowSMB1Server` |
+| Data Type | Integer |
+| Value | `0` |
 
 ## Impact
 
-- **Legacy systems risk**: Windows XP, old NAS devices, some printers may use SMBv1. Audit before disabling.
-- No impact on modern Windows 7+ clients using SMBv2/v3
-- Requires **reboot** to take full effect
+- ✅ Eliminates EternalBlue (MS17-010) attack surface entirely
+- ✅ Removes WannaCry / NotPetya infection vector
+- ⚠️ Breaks legacy printers, NAS devices, and scanners using SMBv1
+- ⚠️ May affect Windows XP/2003 shares (these should be retired)
+- ℹ️ SMBv2/SMBv3 remain fully functional as replacements
 
 ## Use Cases
 
-- ✅ **Every Windows environment** — this is a non-negotiable baseline
-- ✅ Ransomware prevention (WannaCry, NotPetya, EternalBlue)
-- ✅ Compliance: PCI-DSS, HIPAA, NIST CSF, ISO 27001
-- ✅ Zero-trust network hardening
-
-## Translations
-
-### PowerShell
-
-```powershell
-# Check current state
-Get-SmbServerConfiguration | Select EnableSMB1Protocol
-
-# Disable SMBv1 (Windows 10/11)
-Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart
-
-# Via Registry
-Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" `
-  -Name "SMB1" -Value 0 -Type DWord -Force
-
-# Find active SMBv1 connections before disabling
-Get-SmbConnection | Where-Object Dialect -eq "1.0"
-```
-
-### Registry Export (.reg)
-
-```reg
-Windows Registry Editor Version 5.00
-
-[HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters]
-"SMB1"=dword:00000000
-```
+- **Enterprise hardening** — mandatory on all domain-joined endpoints
+- **Ransomware prevention** — eliminates the primary lateral movement protocol for WannaCry variants
+- **PCI-DSS / HIPAA compliance** — required by most modern security frameworks
+- **Air-gapped environments** — removes unnecessary legacy protocol surface
+- **SOC baseline** — first check after incident response on any Windows endpoint
 
 ## MITRE ATT&CK Mapping
 
@@ -70,10 +77,15 @@ Windows Registry Editor Version 5.00
 |---|---|
 | [T1210](https://attack.mitre.org/techniques/T1210/) | Exploitation of Remote Services |
 | [T1021.002](https://attack.mitre.org/techniques/T1021/002/) | Remote Services: SMB/Windows Admin Shares |
-| [T1570](https://attack.mitre.org/techniques/T1570/) | Lateral Tool Transfer (worm propagation via SMB) |
+| [T1570](https://attack.mitre.org/techniques/T1570/) | Lateral Tool Transfer |
 
 ## Compliance References
 
-- **CIS Benchmark**: Windows 10/11 Level 1, Control 18.3.3
+- **CIS Benchmark**: Level 1, Control 9.3
 - **DISA STIG**: WN10-00-000160
-- **MS Blog**: [Stop using SMB1](https://techcommunity.microsoft.com/t5/storage-at-microsoft/stop-using-smb1/ba-p/425858)
+- **NIST SP 800-171**: 3.13.8
+- **MS Security Baseline**: Windows 10/11 — SMBv1 disabled by default since 1709
+
+## Test Status
+
+✅ Tested on Windows 10 22H2, Windows 11 24H2, Windows Server 2022
