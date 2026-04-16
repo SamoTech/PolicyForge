@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PolicyForge Policy Entry Schema",
+  "description": "Canonical schema for all Group Policy entries in the PolicyForge repository",
+  "type": "object",
+  "required": ["id", "name", "category", "path", "registry", "description", "risk_level", "applies_to", "test_status"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier, e.g. WIN-PRIVACY-001",
+      "pattern": "^[A-Z]{2,6}-[A-Z]{2,10}-[0-9]{3}$"
+    },
+    "name": { "type": "string" },
+    "category": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "path": { "type": "string", "description": "Full ADMX / GPO Editor path" },
+    "registry": {
+      "type": "object",
+      "required": ["path", "value", "data", "type"],
+      "properties": {
+        "path": { "type": "string" },
+        "value": { "type": "string" },
+        "data": {},
+        "type": {
+          "type": "string",
+          "enum": ["REG_DWORD", "REG_SZ", "REG_EXPAND_SZ", "REG_MULTI_SZ", "REG_BINARY", "REG_QWORD"]
+        }
+      }
+    },
+    "description": { "type": "string" },
+    "impact": { "type": "array", "items": { "type": "string" } },
+    "use_cases": { "type": "array", "items": { "type": "string" } },
+    "equivalent": {
+      "type": "object",
+      "properties": {
+        "intune_csp": { "type": "string" },
+        "powershell": { "type": "string" },
+        "registry_export": { "type": "string" }
+      }
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["Low", "Medium", "High", "Critical"]
+    },
+    "applies_to": { "type": "array", "items": { "type": "string" } },
+    "test_status": { "type": "string" },
+    "mitre_attack": { "type": "array", "items": { "type": "string" } },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "added_version": { "type": "string" },
+    "deprecated_version": { "type": "string" }
+  }
+}

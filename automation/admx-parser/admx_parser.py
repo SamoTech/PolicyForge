@@ -1,0 +1,201 @@
+#!/usr/bin/env python3
+"""
+PolicyForge ADMX Parser
+========================
+Parses Microsoft ADMX files and generates structured Markdown documentation.
+
+Usage:
+    python admx_parser.py --input /path/to/PolicyDefinitions --output ../../policies/ --lang en-US
+
+Requirements:
+    pip install lxml rich click
+
+Author: PolicyForge Contributors
+License: MIT
+"""
+
+import os
+import re
+import json
+import click
+from pathlib import Path
+from xml.etree import ElementTree as ET
+from datetime import datetime
+
+
+def parse_admx_file(admx_path: Path, adml_path=None) -> list:
+    """Parse a single ADMX file and return a list of policy dicts."""
+    policies = []
+    strings = {}
+
+    # Load ADML string table if available
+    if adml_path and adml_path.exists():
+        try:
+            adml_tree = ET.parse(adml_path)
+            adml_root = adml_tree.getroot()
+            for string_elem in adml_root.iter():
+                if string_elem.tag.endswith('}string') and string_elem.get('id'):
+                    strings[string_elem.get('id')] = (string_elem.text or '').strip()
+        except ET.ParseError as e:
+            print(f"  [WARN] Could not parse ADML {adml_path}: {e}")
+
+    def resolve(ref: str) -> str:
+        """Resolve a $(string.ID) reference."""
+        if ref and ref.startswith('$(string.'):
+            key = ref[9:-1]
+            return strings.get(key, ref)
+        return ref or ''
+
+    try:
+        tree = ET.parse(admx_path)
+        root = tree.getroot()
+    except ET.ParseError as e:
+        print(f"  [ERROR] Could not parse ADMX {admx_path}: {e}")
+        return []
+
+    for policy in root.iter():
+        if not policy.tag.endswith('}policy'):
+            continue
+
+        name = policy.get('name', '')
+        display_name = resolve(policy.get('displayName', ''))
+        explain_text = resolve(policy.get('explainText', ''))
+        class_type = policy.get('class', 'Machine')
+
+        category_ref = policy.find('.//{http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions}parentCategory')
+        category_path = category_ref.get('ref', '') if category_ref is not None else ''
+
+        reg_key = policy.get('key', '')
+        reg_value_name = policy.get('valueName', '')
+
+        elements = []
+        for elem in policy:
+            tag = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
+            if tag == 'elements':
+                for child in elem:
+                    child_tag = child.tag.split('}')[-1]
+                    elements.append({
+                        'type': child_tag,
+                        'id': child.get('id', ''),
+                        'key': child.get('key', reg_key),
+                        'valueName': child.get('valueName', ''),
+                    })
+
+        policies.append({
+            'name': name,
+            'display_name': display_name,
+            'explain_text': explain_text,
+            'class': class_type,
+            'category_path': category_path,
+            'registry_key': reg_key,
+            'registry_value': reg_value_name,
+            'elements': elements,
+            'source_file': admx_path.name,
+        })
+
+    return policies
+
+
+def policy_to_markdown(policy: dict, policy_id: str = '') -> str:
+    """Convert a parsed policy dict to PolicyForge Markdown format."""
+    lines = []
+    lines.append(f"# {policy['display_name'] or policy['name']}")
+    lines.append('')
+    if policy_id:
+        lines.append(f'**ID**: `{policy_id}`  ')
+    lines.append(f"**Class**: {policy['class']}  ")
+    lines.append(f"**Source**: `{policy['source_file']}`  ")
+    lines.append('')
+
+    if policy['explain_text']:
+        lines.append('## Description')
+        lines.append('')
+        lines.append(policy['explain_text'])
+        lines.append('')
+
+    if policy['registry_key']:
+        lines.append('## Registry')
+        lines.append('')
+        lines.append('| Key | Value |')
+        lines.append('|---|---|')
+        lines.append(f"| **Path** | `{policy['registry_key']}` |")
+        if policy['registry_value']:
+            lines.append(f"| **Value Name** | `{policy['registry_value']}` |")
+        lines.append('')
+
+    lines.append('## Use Cases')
+    lines.append('')
+    lines.append('> ⚠️ *Auto-generated from ADMX. Add real-world use cases here.*')
+    lines.append('')
+    lines.append('## Translations')
+    lines.append('')
+    lines.append('### PowerShell')
+    lines.append('')
+    lines.append('```powershell')
+    if policy['registry_key'] and policy['registry_value']:
+        lines.append(f'Set-ItemProperty -Path "{policy["registry_key"]}" \\')
+        lines.append(f'  -Name "{policy["registry_value"]}" -Value 1 -Type DWord -Force')
+    else:
+        lines.append('# Registry path auto-detection pending')
+    lines.append('```')
+    lines.append('')
+    lines.append('---')
+    lines.append(f'*Auto-generated by PolicyForge ADMX Parser on {datetime.now().strftime("%Y-%m-%d")}*')
+    return '\n'.join(lines)
+
+
+@click.command()
+@click.option('--input', '-i', 'input_dir', required=True,
+              help='Path to PolicyDefinitions folder containing .admx files')
+@click.option('--output', '-o', 'output_dir', default='./output',
+              help='Output directory for generated Markdown files')
+@click.option('--lang', '-l', default='en-US',
+              help='Language code for ADML files (default: en-US)')
+@click.option('--format', '-f', 'output_format', default='markdown',
+              type=click.Choice(['markdown', 'json', 'both']),
+              help='Output format')
+@click.option('--limit', default=0, help='Limit number of files processed (0 = all)')
+def main(input_dir, output_dir, lang, output_format, limit):
+    """PolicyForge ADMX Parser — Convert ADMX files to structured Markdown."""
+    input_path = Path(input_dir)
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    admx_files = list(input_path.glob('*.admx'))
+    if limit > 0:
+        admx_files = admx_files[:limit]
+
+    print(f"PolicyForge ADMX Parser")
+    print(f"  Input:  {input_path}")
+    print(f"  Output: {output_path}")
+    print(f"  Files:  {len(admx_files)} ADMX files found")
+    print()
+
+    total_policies = 0
+    for admx_file in admx_files:
+        adml_file = input_path / lang / admx_file.with_suffix('.adml').name
+        print(f"  Parsing {admx_file.name}...", end=' ')
+        policies = parse_admx_file(admx_file, adml_file)
+        print(f"{len(policies)} policies")
+
+        component_name = admx_file.stem.lower().replace(' ', '-')
+        component_dir = output_path / component_name
+        component_dir.mkdir(exist_ok=True)
+
+        for i, policy in enumerate(policies):
+            safe_name = re.sub(r'[^\w-]', '-', policy['name'].lower())[:60]
+            policy_id = f"AUTO-{component_name.upper()[:8]}-{i+1:03d}"
+            if output_format in ('markdown', 'both'):
+                md_path = component_dir / f"{safe_name}.md"
+                md_path.write_text(policy_to_markdown(policy, policy_id), encoding='utf-8')
+            if output_format in ('json', 'both'):
+                json_path = component_dir / f"{safe_name}.json"
+                json_path.write_text(json.dumps(policy, indent=2, ensure_ascii=False), encoding='utf-8')
+        total_policies += len(policies)
+
+    print()
+    print(f"✅ Done. {total_policies} policies exported to {output_path}")
+
+
+if __name__ == '__main__':
+    main()
