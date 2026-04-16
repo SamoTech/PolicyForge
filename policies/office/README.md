@@ -1,46 +1,52 @@
-# Microsoft Office / Microsoft 365 Policies
+# Microsoft Office Policies
 
-> 🔜 **Coming in Phase 3** — Office Group Policy and MDM CSP documentation
+This directory contains Group Policy, registry, and Intune configurations for Microsoft Office (2016, 2019, Microsoft 365 Apps) security hardening.
 
-This directory will cover Group Policy settings for Microsoft Office apps (Word, Excel, PowerPoint, Outlook, Teams) and Microsoft 365 cloud services.
+## Overview
 
-## Planned Coverage
+Microsoft Office is the #1 target for initial access in enterprise environments. Macro-enabled documents, OLE objects, and Protected View bypasses account for the majority of phishing-delivered malware. This collection focuses on the highest-impact Office security controls.
 
-| Category | Example Policies |
-|---|---|
-| **Macro Security** | Disable VBA macros, block macros from the internet, trusted locations |
-| **Outlook / Exchange** | Autodiscover lockdown, S/MIME enforcement, junk filter, attachment block |
-| **Teams** | Guest access, external federation, meeting recording, app permissions |
-| **OneDrive** | Sync lockdown, known folder move enforcement, B2B sync block |
-| **Excel / Word / PowerPoint** | Protected View enforcement, DDE disable, external content block |
-| **Microsoft 365 Apps** | Update channel, telemetry level, connected experiences |
+## Policy Index
 
-## Policy ID Format
+| ID | Policy | Risk | Category |
+|---|---|---|---|
+| [OFFICE-001](./OFFICE-001-disable-vba-macros.md) | Disable VBA Macros by Default | 🔴 High | Macro Security |
+| [OFFICE-002](./OFFICE-002-block-macros-from-internet.md) | Block Macros from Internet Files | 🔴 Critical | Phishing Defense |
+| [OFFICE-003](./OFFICE-003-trusted-locations-only.md) | Restrict Macros to Trusted Locations | 🔴 High | Zero-Trust Macros |
+| [OFFICE-004](./OFFICE-004-enforce-protected-view.md) | Enforce Protected View | 🔴 High | Sandbox / Exploit Prevention |
+| [OFFICE-005](./OFFICE-005-block-ole-objects.md) | Block OLE Object Execution | 🔴 Critical | OLE / APT Defense |
 
-Office policies follow: `OFF-[APP]-[NUMBER]`
+## Deploying Office Policies
 
-Examples:
-- `OFF-MAC-001` — Block VBA macros from internet origin
-- `OFF-OLK-001` — Disable Outlook Autodiscover v1
-- `OFF-TMS-001` — Disable Teams guest access
-- `OFF-ODR-001` — Enforce OneDrive Known Folder Move
+### Via Group Policy (ADMX)
+1. Download [Office ADMX templates](https://www.microsoft.com/en-us/download/details.aspx?id=49030) from Microsoft
+2. Copy `.admx` files to `C:\Windows\PolicyDefinitions\`
+3. Copy `.adml` files to `C:\Windows\PolicyDefinitions\en-US\`
+4. Open `gpedit.msc` — Office policies appear under **Administrative Templates > Microsoft Office 2016**
 
-## Why Office Policies Matter
+### Via Intune
+- **Settings Catalog**: Search for "Microsoft Office" or "Microsoft Word"
+- **ADMX Ingestion**: Upload Office ADMX to Intune for full policy coverage
+- **Remediation Scripts**: Deploy registry-based settings (PackagerActivation, blockcontentexecutionfrominternet) via PowerShell remediation
 
-Office is the #1 initial access vector in enterprise breaches:
-- **T1566.001** — Phishing with malicious Office attachments (macros)
-- **T1059.005** — VBA macro execution
-- **T1048** — Data exfiltration via OneDrive/SharePoint
+### Via PowerShell (Standalone)
+```powershell
+# Quick apply: macro baseline for all Office apps
+$apps = @("word", "excel", "powerpoint")
+$basePath = "HKCU:\SOFTWARE\Policies\Microsoft\Office\16.0"
 
-Every policy here directly reduces attack surface on the Microsoft 365 stack.
+foreach ($app in $apps) {
+    $path = "$basePath\$app\security"
+    If (-not (Test-Path $path)) { New-Item -Path $path -Force | Out-Null }
+    Set-ItemProperty -Path $path -Name "VBAWarnings" -Value 2 -Type DWord
+    Set-ItemProperty -Path $path -Name "blockcontentexecutionfrominternet" -Value 1 -Type DWord
+}
+Write-Output "Office macro baseline applied."
+```
 
-## ADMX / Configuration Sources
+## Resources
 
 - [Office ADMX templates download](https://www.microsoft.com/en-us/download/details.aspx?id=49030)
-- [Microsoft 365 Apps admin center](https://config.office.com)
-- [Teams admin center policies](https://admin.teams.microsoft.com)
-- [Microsoft 365 Security baselines](https://learn.microsoft.com/en-us/microsoft-365/security/)
-
-## Want to Contribute?
-
-Office policies are highly requested by r/sysadmin. See [CONTRIBUTING.md](../../CONTRIBUTING.md) and earn the **M365 Defender** badge.
+- [Microsoft 365 Apps Security Baseline](https://docs.microsoft.com/en-us/deployoffice/overview-of-security-settings)
+- [CIS Microsoft Office Benchmarks](https://www.cisecurity.org/benchmark/microsoft_office)
+- [DISA Office STIGs](https://public.cyber.mil/stigs/downloads/)
