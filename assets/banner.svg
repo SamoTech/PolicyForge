@@ -1,0 +1,65 @@
+<svg width="1280" height="400" viewBox="0 0 1280 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1117;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#111820;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#01696f;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4f98a3;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="400" fill="url(#bg)"/>
+  <g opacity="0.04" stroke="#4f98a3" stroke-width="1">
+    <line x1="0" y1="50" x2="1280" y2="50"/><line x1="0" y1="100" x2="1280" y2="100"/>
+    <line x1="0" y1="150" x2="1280" y2="150"/><line x1="0" y1="200" x2="1280" y2="200"/>
+    <line x1="0" y1="250" x2="1280" y2="250"/><line x1="0" y1="300" x2="1280" y2="300"/>
+    <line x1="0" y1="350" x2="1280" y2="350"/>
+    <line x1="160" y1="0" x2="160" y2="400"/><line x1="320" y1="0" x2="320" y2="400"/>
+    <line x1="480" y1="0" x2="480" y2="400"/><line x1="640" y1="0" x2="640" y2="400"/>
+    <line x1="800" y1="0" x2="800" y2="400"/><line x1="960" y1="0" x2="960" y2="400"/>
+    <line x1="1120" y1="0" x2="1120" y2="400"/>
+  </g>
+  <g opacity="0.055" font-family="monospace" font-size="11" fill="#4f98a3">
+    <text x="60" y="370">HKLM\Software\Policies\Microsoft\Windows\DataCollection  AllowTelemetry=0  REG_DWORD</text>
+    <text x="60" y="385">HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters  SMB1=0  REG_DWORD</text>
+    <text x="640" y="370">./Device/Vendor/MSFT/Policy/Config/System/AllowTelemetry  Computer Config &gt; Admin Templates</text>
+    <text x="640" y="385">WIN-SECURITY-002  WIN-PRIVACY-001  CIS Level 1  DISA STIG  NIST SP 800-53  ISO 27001</text>
+  </g>
+  <rect x="60" y="80" width="4" height="240" fill="url(#accent)" rx="2"/>
+  <g transform="translate(100, 140)">
+    <path d="M60 0 L110 20 L110 75 Q110 105 60 120 Q10 105 10 75 L10 20 Z" fill="none" stroke="#01696f" stroke-width="3" opacity="0.9"/>
+    <path d="M60 8 L103 25 L103 75 Q103 98 60 112 Q17 98 17 75 L17 25 Z" fill="#01696f" opacity="0.15"/>
+    <rect x="35" y="65" width="50" height="28" rx="3" fill="#01696f" opacity="0.9"/>
+    <rect x="28" y="55" width="64" height="16" rx="4" fill="#4f98a3" opacity="0.9"/>
+    <path d="M28 55 Q15 55 12 63 L28 71 Z" fill="#4f98a3" opacity="0.8"/>
+    <rect x="72" y="28" width="8" height="24" rx="2" fill="#4f98a3" opacity="0.85" transform="rotate(-25, 76, 36)"/>
+    <rect x="65" y="22" width="22" height="12" rx="3" fill="#4f98a3" opacity="0.95" transform="rotate(-25, 76, 28)"/>
+    <line x1="58" y1="36" x2="50" y2="26" stroke="#4f98a3" stroke-width="2" opacity="0.7"/>
+    <line x1="62" y1="36" x2="68" y2="24" stroke="#01696f" stroke-width="2" opacity="0.7"/>
+  </g>
+  <text x="260" y="175" font-family="'Segoe UI', Arial, sans-serif" font-size="72" font-weight="700" fill="#ffffff" letter-spacing="-1">Policy<tspan fill="#4f98a3">Forge</tspan></text>
+  <text x="262" y="225" font-family="'Segoe UI', Arial, sans-serif" font-size="22" font-weight="400" fill="#8b9aa8" letter-spacing="0.5">The missing operating manual for Windows environments.</text>
+  <g transform="translate(262, 260)">
+    <rect x="0" y="0" width="138" height="32" rx="16" fill="#01696f" opacity="0.18"/>
+    <rect x="0" y="0" width="138" height="32" rx="16" fill="none" stroke="#01696f" stroke-width="1" opacity="0.5"/>
+    <text x="69" y="21" font-family="'Segoe UI', Arial, sans-serif" font-size="13" fill="#4f98a3" text-anchor="middle" font-weight="500">GPO Explorer</text>
+    <rect x="150" y="0" width="162" height="32" rx="16" fill="#01696f" opacity="0.18"/>
+    <rect x="150" y="0" width="162" height="32" rx="16" fill="none" stroke="#01696f" stroke-width="1" opacity="0.5"/>
+    <text x="231" y="21" font-family="'Segoe UI', Arial, sans-serif" font-size="13" fill="#4f98a3" text-anchor="middle" font-weight="500">Deploy Templates</text>
+    <rect x="324" y="0" width="185" height="32" rx="16" fill="#01696f" opacity="0.18"/>
+    <rect x="324" y="0" width="185" height="32" rx="16" fill="none" stroke="#01696f" stroke-width="1" opacity="0.5"/>
+    <text x="416" y="21" font-family="'Segoe UI', Arial, sans-serif" font-size="13" fill="#4f98a3" text-anchor="middle" font-weight="500">GPO to Intune CSP</text>
+    <rect x="521" y="0" width="160" height="32" rx="16" fill="#01696f" opacity="0.18"/>
+    <rect x="521" y="0" width="160" height="32" rx="16" fill="none" stroke="#01696f" stroke-width="1" opacity="0.5"/>
+    <text x="601" y="21" font-family="'Segoe UI', Arial, sans-serif" font-size="13" fill="#4f98a3" text-anchor="middle" font-weight="500">MITRE ATT&amp;CK</text>
+  </g>
+  <rect x="0" y="396" width="1280" height="4" fill="url(#accent)" opacity="0.8"/>
+  <g opacity="0.05" stroke="#4f98a3" stroke-width="1" fill="none">
+    <rect x="1055" y="65" width="175" height="270" rx="4"/>
+    <line x1="1073" y1="103" x2="1213" y2="103"/><line x1="1073" y1="130" x2="1193" y2="130"/>
+    <line x1="1073" y1="157" x2="1203" y2="157"/><line x1="1073" y1="184" x2="1183" y2="184"/>
+    <line x1="1073" y1="211" x2="1208" y2="211"/><line x1="1073" y1="238" x2="1178" y2="238"/>
+    <line x1="1073" y1="265" x2="1198" y2="265"/><line x1="1073" y1="292" x2="1173" y2="292"/>
+  </g>
+</svg>
