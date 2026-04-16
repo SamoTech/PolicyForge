@@ -1,35 +1,39 @@
 # Microsoft Edge Policies
 
-> 🔜 **Coming in Phase 3** — Edge browser Group Policy documentation
+This directory contains Group Policy and registry-based configurations for Microsoft Edge (Chromium) in enterprise and managed environments.
 
-This directory will contain Group Policy and MDM CSP documentation for:
+## Overview
 
-## Planned Coverage
+Microsoft Edge supports over 1,500 configurable policies via ADMX templates. This collection focuses on security-critical and compliance-relevant settings most commonly needed by enterprise sysadmins and security teams.
 
-| Category | Example Policies |
-|---|---|
-| **Security** | SmartScreen enforcement, HTTPS-Only mode, certificate management |
-| **Privacy** | Telemetry, sync settings, search engine lockdown |
-| **Enterprise** | Managed favorites, homepage enforcement, extension allowlist |
-| **Kiosk** | InPrivate kiosk mode, idle timeout, navigation restrictions |
-| **Performance** | Sleeping tabs, startup boost, memory saver |
+## Policy Index
 
-## Policy ID Format
+| ID | Policy | Risk | Category |
+|---|---|---|---|
+| [EDGE-001](./EDGE-001-disable-inprivate.md) | Disable InPrivate Browsing | 🟠 Medium | Compliance / DLP |
+| [EDGE-002](./EDGE-002-block-password-manager.md) | Block Built-in Password Manager | 🟠 Medium | Credential Security |
+| [EDGE-003](./EDGE-003-enforce-smartscreen.md) | Enforce SmartScreen | 🔴 High | Phishing Protection |
+| [EDGE-004](./EDGE-004-disable-autofill-creditcard.md) | Disable AutoFill for Credit Cards | 🟠 Medium | PCI-DSS / DLP |
+| [EDGE-005](./EDGE-005-force-safe-search.md) | Force Safe Search | 🟢 Low | Content Filtering |
 
-Edge policies will follow the schema: `EDGE-[CATEGORY]-[NUMBER]`
+## Deploying Edge Policies
 
-Examples:
-- `EDGE-SEC-001` — Enable SmartScreen
-- `EDGE-PRIV-001` — Disable Edge telemetry
-- `EDGE-ENT-001` — Configure managed favorites
+### Via Group Policy
+1. Download the [Edge ADMX templates](https://www.microsoft.com/en-us/edge/business/download) from Microsoft
+2. Copy `.admx` files to `C:\Windows\PolicyDefinitions\`
+3. Copy `.adml` files to `C:\Windows\PolicyDefinitions\en-US\`
+4. Open `gpedit.msc` — Edge policies appear under **Administrative Templates > Microsoft Edge**
 
-## Want to Contribute?
+### Via Intune
+- Use the **Settings Catalog** in Intune and search for `Microsoft Edge`
+- Or ingest ADMX templates via **Device Configuration > Templates > Administrative Templates**
 
-Edge has 500+ ADMX-configurable policies. Community contributions are open now.
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) to get started and earn the **Edge Explorer** badge.
+### Via Registry / PowerShell
+- All Edge policies write to `HKLM:\SOFTWARE\Policies\Microsoft\Edge`
+- Deploy via GPO startup script, Intune remediation, or SCCM
 
-## ADMX Source
+## Resources
 
-Microsoft publishes Edge ADMX templates at:
-- [Edge for Business — Policy documentation](https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies)
-- [Edge ADMX download](https://www.microsoft.com/en-us/edge/business/download)
+- [Edge Enterprise documentation](https://docs.microsoft.com/en-us/deployedge/)
+- [Edge policy reference](https://docs.microsoft.com/en-us/deployedge/microsoft-edge-policies)
+- [Download Edge ADMX templates](https://www.microsoft.com/en-us/edge/business/download)
