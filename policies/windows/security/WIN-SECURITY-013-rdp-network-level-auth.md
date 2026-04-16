@@ -1,54 +1,99 @@
----
-id: WIN-SECURITY-013
-name: Require Network Level Authentication for RDP
-category: [Security, Remote Access, Authentication]
-risk_level: High
-applies_to: [Windows Vista+, Windows 10, Windows 11, Windows Server 2008+]
-test_status: "✅ Tested on Windows 10 22H2, Windows 11 24H2, Server 2022"
----
+# WIN-SECURITY-013 — Require NLA for Remote Desktop
 
-# Require Network Level Authentication for RDP
+## Metadata
+
+| Field | Value |
+|---|---|
+| **ID** | WIN-SECURITY-013 |
+| **Category** | Remote Access |
+| **Risk Level** | 🔴 Critical |
+| **OS** | Windows 10, 11, Server 2016+ |
+| **Test Status** | ✅ Tested on Windows 11 24H2 |
+| **CIS Benchmark** | CIS L1 — 18.10.56.2.2 |
+| **DISA STIG** | WN10-CC-000070 |
+
+---
 
 ## Policy Path
 
 ```
-Computer Configuration
-  └── Administrative Templates
-        └── Windows Components
-              └── Remote Desktop Services
-                    └── Remote Desktop Session Host
-                          └── Security
-                                └── Require user authentication for remote connections
-                                    by using Network Level Authentication → Enabled
+Computer Configuration > Administrative Templates
+> Windows Components > Remote Desktop Services
+> Remote Desktop Session Host > Security
+> Require user authentication for remote connections by using NLA
 ```
 
 ## Registry
 
-| Key | Value | Data | Type |
-|---|---|---|---|
-| `HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services` | `UserAuthentication` | `1` | REG_DWORD |
+```reg
+Windows Registry Editor Version 5.00
 
-## Description
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp]
+"UserAuthentication"=dword:00000001
 
-NLA forces users to authenticate **before** the Windows login screen is rendered, preventing unauthenticated users from reaching the login UI and enabling BlueKeep-style exploits and credential brute-force. Minimum acceptable RDP security configuration.
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services]
+"UserAuthentication"=dword:00000001
+"SecurityLayer"=dword:00000002
+```
 
 ## PowerShell
 
 ```powershell
-$path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services"
-if (!(Test-Path $path)) { New-Item -Path $path -Force }
-Set-ItemProperty -Path $path -Name "UserAuthentication" -Value 1 -Type DWord -Force
-Write-Output "NLA required for RDP."
+# Enable NLA
+Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
+  -Name 'UserAuthentication' -Value 1
+
+Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' `
+  -Name 'UserAuthentication' -Value 1
+
+# Set encryption level to High
+Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' `
+  -Name 'MinEncryptionLevel' -Value 3
+
+# Verify
+(Get-WmiObject -Class Win32_TSGeneralSetting -Namespace root\cimv2\terminalservices).UserAuthenticationRequired
 ```
 
-## MITRE ATT&CK Mapping
+## Intune CSP (OMA-URI)
 
-| Technique | Description |
-|---|---|
-| [T1021.001](https://attack.mitre.org/techniques/T1021/001/) | Remote Services: Remote Desktop Protocol |
-| [T1110](https://attack.mitre.org/techniques/T1110/) | Brute Force |
+```
+OMA-URI: ./Device/Vendor/MSFT/Policy/Config/RemoteDesktopServices/RequireSecureRPCCommunication
+Data Type: Integer
+Value: 1
 
-## Compliance References
+OMA-URI: ./Device/Vendor/MSFT/Policy/Config/RemoteDesktopServices/ClientConnectionEncryptionLevel
+Data Type: Integer
+Value: 3
+```
 
-- **CIS Benchmark**: Level 1, Control 18.9.65.3.2
-- **DISA STIG**: WN10-CC-000280
+## Description
+
+Network Level Authentication (NLA) requires users to authenticate **before** a full RDP session is established. Without NLA, the Windows login screen is exposed to unauthenticated network attackers, enabling brute-force and BlueKeep-style pre-auth vulnerabilities.
+
+## Impact
+
+- ✅ Eliminates pre-authentication RDP attack surface
+- ✅ Blocks BlueKeep (CVE-2019-0708) exploitation vector
+- ✅ Reduces RDP memory exposure to unauthenticated clients
+- ⚠️ Older RDP clients (pre-Vista) cannot connect — not a concern in modern environments
+- ⚠️ Some legacy embedded systems may not support NLA
+
+## Use Cases
+
+- All internet-exposed RDP endpoints (critical)
+- Jump servers / bastion hosts
+- Domain controllers with RDP enabled
+- Any system in a PCI-DSS, HIPAA, or SOC 2 scope
+
+## MITRE ATT&CK
+
+| Technique | ID | Description |
+|---|---|---|
+| Remote Services: Remote Desktop Protocol | T1021.001 | NLA enforces auth before session — limits exposure |
+| Exploit Public-Facing Application | T1190 | Mitigates pre-auth RDP exploits (BlueKeep, DejaBlue) |
+| Brute Force | T1110 | NLA reduces brute-force surface to credential exchange only |
+
+## References
+
+- [CVE-2019-0708 BlueKeep](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2019-0708)
+- [Microsoft NLA Documentation](https://learn.microsoft.com/en-us/windows-server/remote/remote-desktop-services/clients/remote-desktop-allow-access)

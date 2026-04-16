@@ -1,52 +1,94 @@
----
-id: WIN-SECURITY-012
-name: Enable LSA Protection (RunAsPPL)
-category: [Security, Credential Protection, Critical Hardening]
-risk_level: High
-applies_to: [Windows 8.1+, Windows 10, Windows 11, Windows Server 2012 R2+]
-test_status: "✅ Tested on Windows 10 22H2, Windows 11 24H2"
+# WIN-SECURITY-012 — Enable LSA Protection (PPL)
+
+## Metadata
+
+| Field | Value |
+|---|---|
+| **ID** | WIN-SECURITY-012 |
+| **Category** | Credential Protection |
+| **Risk Level** | 🔴 Critical |
+| **OS** | Windows 8.1+, Server 2012 R2+ |
+| **Test Status** | ✅ Tested on Windows 11 24H2 |
+| **CIS Benchmark** | CIS L1 — 18.3.1 |
+| **DISA STIG** | WN10-SO-000155 |
+
 ---
 
-# Enable LSA Protection (RunAsPPL)
+## Policy Path
+
+```
+Computer Configuration > Administrative Templates > MS Security Guide
+> WDigest Authentication (disabling protects against credential harvesting)
+```
 
 ## Registry
 
-| Key | Value | Data | Type |
-|---|---|---|---|
-| `HKLM\SYSTEM\CurrentControlSet\Control\Lsa` | `RunAsPPL` | `1` | REG_DWORD |
+```reg
+Windows Registry Editor Version 5.00
 
-## Description
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa]
+"RunAsPPL"=dword:00000002
+```
 
-Configures LSA as a **Protected Process Light (PPL)**, preventing non-protected processes — including those running as SYSTEM — from reading LSASS memory or injecting into it. Directly blocks `mimikatz`, `procdump`, and similar credential dumping tools. First line of defense before Credential Guard is available.
-
-## Impact
-
-- Some security software (AV/EDR) may fail — verify compatibility first
-- Requires a **reboot** to take effect
+> Value 2 = PPL (Protected Process Light) on Windows 11 22H2+
+> Value 1 = PPL on older systems
 
 ## PowerShell
 
 ```powershell
-Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" `
-  -Name "RunAsPPL" -Value 1 -Type DWord -Force
-Write-Output "LSA Protection enabled. Reboot required."
+# Enable LSA PPL
+Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' `
+  -Name 'RunAsPPL' -Value 2 -Type DWord
+
+# Add UEFI variable for Secure Boot enforcement (optional, strongest protection)
+# Requires admin + reboot
+Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' `
+  -Name 'RunAsPPLBoot' -Value 2 -Type DWord
+
+# Verify
+Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' | Select-Object RunAsPPL
 ```
 
-## Intune CSP
+## Intune CSP (OMA-URI)
 
 ```
-OMA-URI: ./Device/Vendor/MSFT/Policy/Config/MSSecurityGuide/ConfigureLsaProtectedProcess
+OMA-URI: ./Device/Vendor/MSFT/Policy/Config/MSSecurityGuide/EnableStructuredExceptionHandlingOverwriteProtection
 Data Type: Integer
 Value: 1
+
+# LSA PPL via Custom OMA-URI:
+OMA-URI: ./Device/Vendor/MSFT/Policy/Config/LocalPoliciesSecurityOptions/RestrictingPublicSA
+Data Type: Integer
+Value: 2
 ```
 
-## MITRE ATT&CK Mapping
+## Description
 
-| Technique | Description |
-|---|---|
-| [T1003.001](https://attack.mitre.org/techniques/T1003/001/) | Credential Dumping: LSASS Memory |
+LSA Protection runs the LSASS process as a Protected Process Light (PPL), preventing non-PPL processes (including administrator-level processes) from reading LSASS memory. This directly blocks Mimikatz-style credential dumping.
 
-## Compliance References
+## Impact
 
-- **DISA STIG**: WN10-SO-000011
-- **CIS Benchmark**: Level 1, Control 18.3.1
+- ✅ Blocks Mimikatz `sekurlsa::logonpasswords` (most common attack)
+- ✅ Prevents LSASS memory dump via Task Manager, ProcDump
+- ⚠️ May break **unsigned third-party security software** that hooks LSASS
+- ⚠️ Some legacy smart card middleware may be incompatible — test before deployment
+- 🔁 Requires **reboot** to take effect
+
+## Use Cases
+
+- All enterprise endpoints — highest priority credential protection
+- Domain controllers (combine with Protected Users security group)
+- Privileged Access Workstations (PAWs)
+- Post-incident hardening after credential theft
+
+## MITRE ATT&CK
+
+| Technique | ID | Description |
+|---|---|---|
+| OS Credential Dumping: LSASS Memory | T1003.001 | Direct mitigation — PPL blocks LSASS reads |
+| Credential Access | T1555 | Reduces credential availability to attackers |
+
+## References
+
+- [Microsoft: Configuring Additional LSA Protection](https://learn.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection)
+- [Mimikatz vs LSA PPL](https://blog.gentilkiwi.com/mimikatz)

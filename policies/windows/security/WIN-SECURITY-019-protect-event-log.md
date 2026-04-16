@@ -1,46 +1,118 @@
----
-id: WIN-SECURITY-019
-name: Configure Security Event Log Size (Minimum 196MB)
-category: [Security, Auditing, Log Management]
-risk_level: Medium
-applies_to: [Windows Vista+, Windows 10, Windows 11, Windows Server 2008+]
-test_status: "✅ Tested on Windows 10 22H2, Windows 11 24H2"
+# WIN-SECURITY-019 — Protect Event Logs (Size + Retention + Permissions)
+
+## Metadata
+
+| Field | Value |
+|---|---|
+| **ID** | WIN-SECURITY-019 |
+| **Category** | Audit & Logging |
+| **Risk Level** | 🟠 High |
+| **OS** | Windows 10, 11, Server 2016+ |
+| **Test Status** | ✅ Tested on Windows 11 24H2 |
+| **CIS Benchmark** | CIS L1 — 18.9.26.1.1, 18.9.26.1.2 |
+| **DISA STIG** | WN10-AU-000500, WN10-AU-000505, WN10-AU-000510 |
+
 ---
 
-# Configure Security Event Log Size
-
-## Policy Path
+## Policy Paths
 
 ```
-Computer Configuration
-  └── Administrative Templates
-        └── Windows Components
-              └── Event Log Service
-                    └── Security
-                          └── Specify the maximum log file size (KB) → 196608
+Computer Configuration > Administrative Templates
+> Windows Components > Event Log Service > Application
+> Specify the maximum log file size (KB): 32768
+
+Computer Configuration > Administrative Templates
+> Windows Components > Event Log Service > Security
+> Specify the maximum log file size (KB): 196608
+
+Computer Configuration > Administrative Templates
+> Windows Components > Event Log Service > System
+> Specify the maximum log file size (KB): 32768
 ```
 
 ## Registry
 
-| Key | Value | Data | Type |
-|---|---|---|---|
-| `HKLM\SOFTWARE\Policies\Microsoft\Windows\EventLog\Security` | `MaxSize` | `196608` | REG_DWORD |
+```reg
+Windows Registry Editor Version 5.00
 
-## Description
+; Application Log — 32MB
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\EventLog\Application]
+"MaxSize"=dword:00008000
 
-The default Security log (20MB) is too small for environments with process creation auditing enabled. An undersized log overwrites old events, destroying forensic evidence. CIS minimum is 196MB. Environments with heavy audit loads should target 1GB+.
+; Security Log — 192MB (critical — high volume)
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\EventLog\Security]
+"MaxSize"=dword:00030000
+"Retention"=dword:00000000
+
+; System Log — 32MB
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\EventLog\System]
+"MaxSize"=dword:00008000
+```
 
 ## PowerShell
 
 ```powershell
-$path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\EventLog\Security"
-if (!(Test-Path $path)) { New-Item -Path $path -Force }
-Set-ItemProperty -Path $path -Name "MaxSize" -Value 196608 -Type DWord -Force
-wevtutil sl Security /ms:201326592
-Write-Output "Security Event Log size set to 192MB."
+# Set log sizes
+Limit-EventLog -LogName Application -MaximumSize 32MB
+Limit-EventLog -LogName Security   -MaximumSize 196MB
+Limit-EventLog -LogName System     -MaximumSize 32MB
+
+# Set retention to overwrite as needed (no data loss)
+Limit-EventLog -LogName Security -OverflowAction OverwriteAsNeeded
+
+# Verify
+Get-EventLog -List | Where-Object {$_.Log -in 'Application','Security','System'} |
+  Select-Object Log, MaximumKilobytes, OverflowAction
+
+# Protect logs from guest/anonymous access
+$sd = "O:BAG:SYD:(A;;0x2;;;SY)(A;;0x2;;;BA)(A;;0x1;;;ER)"
+wevtutil sl Security /ca:$sd
 ```
 
-## Compliance References
+## Intune CSP (OMA-URI)
 
-- **CIS Benchmark**: Level 1, Control 18.9.26.1.1
-- **DISA STIG**: WN10-AU-000500
+```
+OMA-URI: ./Device/Vendor/MSFT/Policy/Config/EventLogService/SpecifyMaximumFileSizeSecurityLog
+Data Type: Integer
+Value: 196608
+
+OMA-URI: ./Device/Vendor/MSFT/Policy/Config/EventLogService/SpecifyMaximumFileSizeApplicationLog
+Data Type: Integer
+Value: 32768
+
+OMA-URI: ./Device/Vendor/MSFT/Policy/Config/EventLogService/SpecifyMaximumFileSizeSystemLog
+Data Type: Integer
+Value: 32768
+```
+
+## Description
+
+Insufficient event log sizes allow attackers to overwrite forensic evidence. Default Windows log sizes (20MB Security, 512KB Application) are far too small for enterprise environments and active Directory environments. Increasing sizes and protecting permissions ensures incident response teams have the data they need.
+
+## Impact
+
+- ✅ Preserves forensic evidence for incident response
+- ✅ Meets SIEM data retention requirements
+- ✅ Prevents log overwrite by high-volume events (authentication storms)
+- ⚠️ Increased disk usage — minimal (~230MB total for all three logs)
+- ⚠️ Very high-activity systems (DCs) may need even larger Security logs (512MB+)
+
+## Use Cases
+
+- All enterprise endpoints (universal)
+- SIEM-connected environments — ensure sufficient local buffer before forwarding
+- Domain Controllers — Security log should be 512MB+
+- Incident Response readiness — standard pre-deployment hardening
+
+## MITRE ATT&CK
+
+| Technique | ID | Description |
+|---|---|---|
+| Indicator Removal: Clear Windows Event Logs | T1070.001 | Large logs + permissions make clearing harder to hide |
+| Impair Defenses: Disable Windows Event Logging | T1562.002 | Log size protection ensures continuity of evidence |
+
+## References
+
+- [CIS Benchmark — Event Log Settings](https://www.cisecurity.org/cis-benchmarks)
+- [Microsoft Event Log Best Practices](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/wevtutil)
+- [NSA Event Logging Guidance](https://media.defense.gov/2022/Jun/13/2003018530/-1/-1/0/CSI_EMBRACING_ZT_SECURITY_MODEL_UOO115131-22.PDF)
