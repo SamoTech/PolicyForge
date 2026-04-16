@@ -1,262 +1,227 @@
+<!-- PolicyForge Banner -->
 <p align="center">
-  <img src="./assets/banner.svg" alt="PolicyForge Banner" width="100%"/>
+  <img src="https://raw.githubusercontent.com/SamoTech/PolicyForge/main/assets/banner.svg" alt="PolicyForge Banner" width="900"/>
+</p>
+
+<h1 align="center">PolicyForge</h1>
+<p align="center">
+  <strong>The Ultimate Microsoft Group Policy Intelligence Platform</strong><br/>
+  Stop guessing what policies do. Start engineering Windows environments with precision.
 </p>
 
 <p align="center">
-  <a href="https://github.com/SamoTech/PolicyForge"><img src="https://img.shields.io/github/stars/SamoTech/PolicyForge?style=flat-square&color=01696f" alt="Stars"/></a>
-  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome"/>
-  <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square" alt="MIT License"/>
-  <img src="https://img.shields.io/badge/Platform-Windows-0078d4.svg?style=flat-square" alt="Windows"/>
-  <img src="https://img.shields.io/badge/Policies-10%2C000%2B-01696f.svg?style=flat-square" alt="Policies"/>
-  <img src="https://img.shields.io/badge/Web_UI-Coming_Soon-orange.svg?style=flat-square" alt="Web UI"/>
+  <a href="https://github.com/SamoTech/PolicyForge/stargazers"><img src="https://img.shields.io/github/stars/SamoTech/PolicyForge?style=flat-square&color=gold" alt="Stars"/></a>
+  <a href="https://github.com/SamoTech/PolicyForge/graphs/contributors"><img src="https://img.shields.io/github/contributors/SamoTech/PolicyForge?style=flat-square&color=teal" alt="Contributors"/></a>
+  <a href="https://github.com/SamoTech/PolicyForge/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT License"/></a>
+  <img src="https://img.shields.io/badge/policies-50%2B-brightgreen?style=flat-square" alt="50+ Policies"/>
+  <img src="https://img.shields.io/badge/status-active-success?style=flat-square" alt="Active"/>
+  <img src="https://img.shields.io/badge/MITRE%20ATT%26CK-mapped-red?style=flat-square" alt="MITRE"/>
 </p>
 
 ---
 
-**PolicyForge** is the most advanced open-source platform for IT professionals, sysadmins, and security engineers who work with Microsoft Group Policy (GPO), Intune MDM/CSP, and Windows configuration at scale.
+## 🚀 What Is PolicyForge?
 
-> Stop guessing what policies do. Start **engineering** Windows environments with precision.
+PolicyForge is an open-source intelligence platform for **Microsoft Group Policy, ADMX, MDM CSP, and Intune**. It bridges the gap between:
 
----
+- 📄 Raw ADMX files that are unreadable at scale
+- 🖥️ Group Policy Editor that provides zero context
+- ☁️ Intune with its completely different language (CSP)
+- 🔒 Security baselines that are rigid and undocumented
 
-## 🧠 Why PolicyForge Exists
-
-Microsoft's ecosystem is **fragmented by design**:
-
-| Tool | Problem |
-|---|---|
-| ADMX files | Machine-readable, not human-readable at scale |
-| Group Policy Editor | Zero real-world context or impact documentation |
-| Intune / MDM CSP | Completely different naming language from GPO |
-| Security baselines | Rigid, undocumented, impossible to customize safely |
-
-The result? Admins copy configs blindly without understanding what they're deploying or why.
-
-**PolicyForge is the StackOverflow + GitHub + Docs hybrid for Windows policy engineering.**
+**PolicyForge is not documentation. It is infrastructure for IT decision-making.**
 
 ---
 
-## 🚀 Features
+## 🔥 Features
 
 | Feature | Status |
 |---|---|
-| 10,000+ policies indexed with real-world context | 🔄 In Progress |
-| Use-case mapping: enterprise, SMB, offensive, defensive | ✅ Available |
-| Pre-built deployment templates (baseline → hardening → kiosk) | ✅ Available |
-| GPO ↔ Intune ↔ Registry ↔ PowerShell translation engine | ✅ Available |
-| ADMX auto-parser & bulk doc generator | ✅ Available |
-| Policy diff tracker (Win10 vs Win11 vs Server) | 🔄 In Progress |
-| MITRE ATT&CK mapping for every security policy | ✅ Available |
-| CIS / DISA STIG / NIST compliance cross-references | ✅ Available |
-| **Web UI — searchable policy browser** | 🔄 Planned (Phase 4) |
-| **AI policy recommendation engine** | 🔄 Planned (Phase 5) |
+| 50+ policies indexed with context, impact & use cases | ✅ Live |
+| MITRE ATT&CK mapping for every security policy | ✅ Live |
+| 50 GPO → Intune OMA-URI translations | ✅ Live |
+| Registry ↔ PowerShell reference | ✅ Live |
+| ADMX auto-parser (batch-generates Markdown) | ✅ Live |
+| Policy Diff Tracker (Windows 10 vs 11 vs Server) | ✅ Live |
+| PowerShell translation engine (GPO → Intune CSV) | ✅ Live |
+| Enterprise hardening template (CIS L2 / STIG) | ✅ Live |
+| Gaming optimization template | ✅ Live |
+| Kiosk / lockdown template | ✅ Live |
+| Red team evasion research (MITRE-mapped) | ✅ Live |
+| Web UI policy search dashboard | 🔜 Phase 3 |
+| AI policy recommendation engine | 🔜 Phase 4 |
 
 ---
 
-## 📂 Repository Structure
+## 🗺️ Roadmap
+
+```
+✅ Phase 1 — Foundation (Complete)
+   ├── Repository structure
+   ├── POLICY_SCHEMA.json (standardized schema)
+   ├── 3 seed policies with full MITRE/CSP/Registry mapping
+   └── ADMX parser engine (automation/admx-parser/)
+
+✅ Phase 2 — Scale (Complete)
+   ├── 50+ policies across Windows Security, Privacy, Defender
+   ├── 50 GPO → Intune OMA-URI translation mappings
+   ├── PowerShell translation engine (GPO → Intune CSV export)
+   ├── Policy Diff Tracker (automation/policy-diff/)
+   ├── Registry ↔ PowerShell bulk reference
+   ├── Templates: Enterprise Hardening, Gaming, Kiosk, Red Team
+   └── Post-deployment verification scripts
+
+🔜 Phase 3 — Web UI (Q3 2026)
+   ├── Next.js search dashboard
+   ├── Filter by: OS version, risk level, use case, compliance
+   ├── Policy conflict detector
+   └── Live ADMX diff feed (auto-updates with Windows releases)
+
+🔜 Phase 4 — AI Layer (Q4 2026)
+   ├── Natural language policy query: "Harden 50 SMB endpoints"
+   ├── Auto-generate GPO pack from environment description
+   ├── Policy simulator: "What happens if I enable this?"
+   └── Conflict prediction engine
+
+🔜 Phase 5 — SaaS (2027)
+   ├── PolicyForge Cloud: web dashboard + API
+   ├── Tenant-aware policy recommendations
+   ├── Compliance reporter (CIS, DISA STIG, NIST 800-53)
+   └── MDE / Defender for Business integration
+```
+
+---
+
+## 📁 Repository Structure
 
 ```
 PolicyForge/
 │
 ├── 📁 policies/
-│   ├── windows/          # Windows OS policies (privacy, security, network, ...)
-│   ├── edge/             # Microsoft Edge browser policies
-│   ├── defender/         # Windows Defender / Antivirus policies
-│   ├── office/           # Microsoft 365 / Office policies
-│   └── server/           # Windows Server role policies
+│   ├── windows/security/     # 17+ hardening policies (WIN-SECURITY-xxx)
+│   ├── windows/privacy/      # Telemetry, Cortana, OneDrive
+│   ├── windows/network/      # WPAD and network isolation
+│   ├── defender/             # 10 Defender policies (DEF-001 → DEF-010)
+│   ├── edge/                 # (Phase 3)
+│   └── server/               # (Phase 3)
 │
 ├── 📁 templates/
-│   ├── security-baselines/    # CIS / DISA STIG-aligned baselines
-│   ├── performance/           # High-performance workstation configs
-│   ├── kiosk-mode/            # Locked-down kiosk deployments
-│   ├── gaming-optimization/   # Gaming PC GPO optimization
-│   ├── enterprise-hardening/  # Enterprise endpoint hardening pack
-│   └── redteam-evasion/       # ⚠️ Research: attacker-abused misconfigs
+│   ├── security-baselines/   # Enterprise baseline (CIS L2 / STIG)
+│   ├── enterprise-hardening/ # 5-layer hardening + verify.ps1
+│   ├── gaming-optimization/  # Performance tuning for gaming PCs
+│   ├── kiosk-mode/           # Full lockdown + assigned access
+│   └── redteam-evasion/      # Offensive research (authorized use)
 │
 ├── 📁 translations/
-│   ├── gpo-to-intune/         # Group Policy → Intune CSP mappings
-│   ├── registry-mapping/      # Registry key ↔ ADMX mapping tables
-│   └── powershell/            # PowerShell equivalents for all policies
+│   ├── gpo-to-intune/        # 50 GPO → OMA-URI mappings + PS engine
+│   └── registry-mapping/     # Registry ↔ PowerShell reference
 │
 ├── 📁 automation/
-│   ├── admx-parser/           # ADMX → Markdown bulk doc generator
-│   ├── policy-diff/           # Compare policies across OS versions
-│   └── auto-doc-generator/    # Batch documentation automation
+│   ├── admx-parser/          # ADMX → Markdown generator
+│   └── policy-diff/          # Windows version diff tracker
 │
 ├── 📁 dashboards/
-│   └── web-ui/                # 🌐 Next.js searchable policy browser
+│   └── web-ui/               # (Phase 3 — Next.js)
 │
-├── 📁 assets/
-│   ├── banner.svg             # Repository banner
-│   └── logo.svg               # PolicyForge logo mark
-│
-├── POLICY_SCHEMA.json
+├── README.md
 ├── CONTRIBUTING.md
-└── README.md
+├── POLICY_SCHEMA.json
+└── LICENSE
 ```
 
 ---
 
 ## 🧪 Example Use Cases
 
-- **Harden endpoints against ransomware** → `templates/enterprise-hardening/`
-- **Migrate GPO to Intune** → `translations/gpo-to-intune/`
-- **Build kiosk / lockdown environments** → `templates/kiosk-mode/`
-- **Disable telemetry (tested configs)** → `policies/windows/privacy/`
-- **Red team research** → `templates/redteam-evasion/` ⚠️
-- **Auto-document your ADMX files** → `automation/admx-parser/`
+| Goal | PolicyForge Resource |
+|---|---|
+| Harden endpoints against ransomware | `templates/enterprise-hardening/` + `policies/defender/DEF-006` |
+| Migrate GPO to Intune | `translations/gpo-to-intune/windows-security.md` + `translation-engine.ps1` |
+| Block LLMNR poisoning attacks | `policies/windows/security/WIN-SECURITY-012` |
+| Lock down a kiosk / POS terminal | `templates/kiosk-mode/` |
+| Find policies deprecated in Windows 11 | `automation/policy-diff/policy_diff.py` |
+| Understand what red teams look for | `templates/redteam-evasion/` |
+| Optimize a gaming PC via GPO | `templates/gaming-optimization/` |
+| Validate hardening post-deployment | `templates/enterprise-hardening/verify.ps1` |
 
 ---
 
-## 📋 Policy Entry Format
+## ⚡ Quick Start
 
-Every policy follows the schema in [`POLICY_SCHEMA.json`](POLICY_SCHEMA.json). Template at [`policies/_TEMPLATE.md`](policies/_TEMPLATE.md).
-
-```yaml
-# Example: WIN-SECURITY-002
-Name:      Disable SMBv1 Protocol
-Registry:  HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters > SMB1 = 0
-Intune:    ./Device/Vendor/MSFT/Policy/Config/... (see translation)
-Risk:      Critical
-MITRE:     T1210, T1021.002, T1570
-Compliance: CIS Level 1 · DISA STIG WN10-00-000160 · NIST SI-3
-Tested:    ✅ Windows 10 22H2, Windows 11 24H2, Server 2022
-```
-
----
-
-## ⚙️ Automation
+### Explore a Policy
 
 ```bash
-# Parse all ADMX files → generate Markdown docs in bulk
-cd automation/admx-parser
-python admx_parser.py \
-  --input "C:\Windows\PolicyDefinitions" \
-  --output ../../policies/windows/ \
-  --format both
+# Browse policies by category
+ls policies/defender/
+ls policies/windows/security/
 
-# Compare policies across Windows versions
-cd automation/policy-diff
-python policy_diff.py --old win10 --new win11 --output ./reports/
+# Every policy file includes: registry path, PowerShell, Intune CSP, MITRE mapping
+cat policies/defender/DEF-005-configure-attack-surface-reduction.md
 ```
 
----
+### Run the ADMX Parser
 
-## 🌐 Web UI (Coming — Phase 4)
+```bash
+# Batch-generate Markdown from all ADMX files on your Windows machine
+python automation/admx-parser/admx_parser.py \
+  --admx-dir "C:\Windows\PolicyDefinitions" \
+  --output-dir ./generated-policies
+```
 
-A Next.js-powered policy browser that lets you:
+### Migrate GPO to Intune
 
-- **Search policies like Google** — full-text, tag, and category search
-- **Filter by** OS version, risk level, compliance framework, use case
-- **Generate templates** — select policies → download `.reg`, `.ps1`, or GPO backup
-- **Translate on the fly** — paste a registry key, get the Intune CSP equivalent
-- **Policy Simulator** — predict conflicts before deployment
+```powershell
+# Scan live registry and export Intune OMA-URI CSV
+.\translations\gpo-to-intune\translation-engine.ps1 -OutputCsv .\intune-export.csv
+# Then import CSV into: Intune > Devices > Configuration > Create > Custom
+```
 
-The web UI reads directly from this repository's Markdown files — no separate database.
+### Diff Windows Versions
 
-> 🔗 Preview launching after Phase 3 contributor milestone.
+```bash
+# Snapshot Windows 10 policy definitions
+python automation/policy-diff/policy_diff.py \
+  --scan-admx "C:\Windows\PolicyDefinitions" --out snapshots/win10.json
 
----
+# Compare against Windows 11 snapshot
+python automation/policy-diff/policy_diff.py \
+  --compare snapshots/win10.json snapshots/win11.json \
+  --labels "Windows-10" "Windows-11"
+```
 
-## 🗺️ Full Roadmap
+### Verify Hardening Deployment
 
-### ✅ Phase 1 — Foundation (Day 1–3) — COMPLETE
-- [x] Repository scaffold, schema, and contributing guide
-- [x] Logo and banner assets
-- [x] First 3 high-impact policies with full translations
-  - `WIN-PRIVACY-001` — Disable Windows Telemetry
-  - `WIN-SECURITY-001` — Disable AutoRun / AutoPlay
-  - `WIN-SECURITY-002` — Disable SMBv1 Protocol
-- [x] Enterprise security baseline template
-- [x] ADMX parser automation script
-- [x] GPO → Intune translation structure
-- [x] GitHub issue & PR templates
-
-### 🔄 Phase 2 — Scale (Week 1)
-- [ ] Run ADMX parser → import 500+ policies from Windows PolicyDefinitions
-- [ ] Complete `policies/windows/security/` — 50 critical policies
-- [ ] Complete `policies/windows/privacy/` — 20 privacy policies
-- [ ] Complete `policies/defender/` — 30 Defender policies
-- [ ] Add `gaming-optimization` template
-- [ ] Add `kiosk-mode` template
-- [ ] Policy diff tool (`automation/policy-diff/`)
-- [ ] Publish on **r/sysadmin** and **r/netsec**
-
-### 🔄 Phase 3 — Translation Engine (Week 2)
-- [ ] `translations/gpo-to-intune/windows-security.md` — 50+ mappings
-- [ ] `translations/gpo-to-intune/windows-privacy.md`
-- [ ] `translations/registry-mapping/` — Registry ↔ ADMX cross-reference table
-- [ ] `translations/powershell/` — PowerShell deployment scripts per category
-- [ ] Contributor leaderboard and badge system live
-- [ ] Launch on **LinkedIn** and **GitHub Trending**
-
-### 🔄 Phase 4 — Web UI (Week 3+)
-- [ ] Next.js web app in `dashboards/web-ui/`
-- [ ] Full-text policy search engine
-- [ ] Filter: OS version, risk level, compliance, use case
-- [ ] Template generator: select policies → export pack (`.reg`, `.ps1`, GPO)
-- [ ] On-the-fly GPO ↔ Intune translator
-- [ ] Deploy to Vercel (free tier)
-
-### 🔄 Phase 5 — AI Layer (Month 2)
-- [ ] AI recommendation engine
-  - Input: "Secure 50 SMB endpoints against ransomware"
-  - Output: Full GPO pack + Intune profile
-- [ ] Policy conflict detector
-- [ ] Natural language policy search
-- [ ] **SaaS consideration** (60–90 day horizon)
-
----
-
-## 🔐 Security Research Layer
-
-| Track | Description |
-|---|---|
-| 🛡️ Defensive | Policies that close attack surface (MITRE ATT&CK mitigations) |
-| ⚔️ Offensive Research | Misconfigurations attackers actively abuse |
-| 🔍 Detection | Audit policies that surface attacker behavior in logs |
-
-All entries cross-reference MITRE ATT&CK techniques, CIS Controls, and DISA STIGs.
+```powershell
+# Run as Administrator after applying enterprise hardening
+.\templates\enterprise-hardening\verify.ps1
+# Outputs PASS/FAIL/MISSING for 13 critical controls
+# Exports CSV report with timestamp
+```
 
 ---
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Every contribution counts:
+PolicyForge grows through community intelligence. Every contribution makes the platform more valuable for the global sysadmin community.
 
-- 📝 Policy explanations and real-world context
-- 🛠️ Templates and deployment packs
-- 🔄 GPO ↔ Intune translation mappings
-- 🧪 Test results from different Windows versions
-- 🔐 Security research and MITRE ATT&CK mappings
+**Ways to contribute:**
+- 📝 Add a new policy explanation (copy `policies/_TEMPLATE.md`)
+- 🔄 Submit a GPO → Intune mapping we're missing
+- 🧪 Share a real-world deployment config
+- 🔴 Document an attack path and its defensive fix
+- 🌐 Translate policies for non-English documentation
 
-### 🏆 Contributor Badges
-
-| Badge | Criteria |
-|---|---|
-| 🥇 Core Contributor | 10+ merged policy entries |
-| 🎯 Policy Hunter | First to document a new policy |
-| 🧠 Zero-Day Config Finder | Security research with MITRE reference |
-| 🛠️ Template Architect | Template used by 10+ contributors |
-| 🤖 Automation Builder | Merged automation tool |
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full guidelines, badge rewards, and the contributor leaderboard.
 
 ---
 
-## ⚠️ Disclaimer
-
-The `templates/redteam-evasion/` directory contains research-grade configurations documenting how attackers abuse Group Policy. Provided **for defensive research and education only**.
-
----
-
-## 📄 License
+## 📜 License
 
 MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
 <p align="center">
-  <img src="./assets/logo.svg" alt="PolicyForge Logo" width="80" height="80"/>
-  <br/><br/>
-  <strong>PolicyForge</strong> — The missing operating manual for Windows environments.<br/>
-  Built by the community, for the community.
+  Made with ❤️ by the PolicyForge community<br/>
+  <a href="https://github.com/SamoTech/PolicyForge">⭐ Star this repo if it helps you</a>
 </p>
