@@ -24,7 +24,7 @@ export default function Home() {
       ? fuse.search(query).map(r => r.item)
       : POLICIES;
     if (catFilter  !== 'All') list = list.filter(p => p.category === catFilter);
-    if (riskFilter !== 'All') list = list.filter(p => p.risk === riskFilter);
+    if (riskFilter !== 'All') list = list.filter(p => p.risk_level === riskFilter);
     return list;
   }, [query, catFilter, riskFilter]);
 
