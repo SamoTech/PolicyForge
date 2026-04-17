@@ -1,55 +1,40 @@
-# PolicyForge Web UI
+# PolicyForge Dashboard
 
-> 🔜 **Planned for Phase 3 (Q3 2026)** — Next.js policy search dashboard
+Search 140+ Windows security policies, registry paths, PowerShell commands, and Intune OMA-URIs.
 
-The PolicyForge Web UI will be the missing interface layer that makes all 1,000+ policies searchable, filterable, and actionable in a browser.
+## Stack
 
-## Vision
+- **Next.js 15** (App Router, static export)
+- **Fuse.js** — client-side fuzzy search, no backend needed
+- **GitHub Raw** — policies fetched from the PolicyForge repo at build time (ISR: hourly)
+- **Vercel** — one-click deploy, static site
 
-```
-Search: "disable telemetry"
+## Development
 
-┌─────────────────────────────────────────────────────────────────┐
-│ WIN-PRIVACY-001 — Disable Windows Telemetry          ● Medium  │
-│ HKLM\Software\Policies\Microsoft\Windows\DataCollection        │
-│ AllowTelemetry = 0                                             │
-│                                                                │
-│ [📋 Copy Registry]  [⚙️ Copy PowerShell]  [☁️ Copy Intune CSP] │
-└─────────────────────────────────────────────────────────────────┘
+```bash
+npm install
+npm run dev
 ```
 
-## Planned Features
+## Deploy to Vercel
 
-### Core
-- **Google-like search** across all policy names, descriptions, registry paths
-- **Filter by**: OS version, risk level (Low / Medium / High / Critical), use case, compliance standard
-- **One-click copy** for Registry, PowerShell, and Intune OMA-URI formats
-- **Policy conflict detector** — warns when two selected policies contradict each other
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/SamoTech/PolicyForge&root=dashboards/web-ui)
 
-### Advanced
-- **MITRE ATT&CK filter** — show all policies that defend against a specific technique
-- **Compliance view** — CIS Level 1/2, DISA STIG, NIST 800-53 checklists
-- **Diff viewer** — compare policy values between Windows versions
-- **Template builder** — pick policies and export as PowerShell script or GPO backup
+Or push to GitHub — Vercel auto-deploys on every commit.
 
-### Phase 4 (AI)
-- Natural language query: *"Harden 50 SMB endpoints against ransomware"*
-- Auto-generate GPO pack from environment description
-- Policy simulator: *"What breaks if I enable this?"*
+## Environment Variables (optional)
 
-## Tech Stack
-
-| Layer | Technology |
+| Variable | Purpose |
 |---|---|
-| Frontend | Next.js 15 + TypeScript |
-| Styling | Tailwind CSS v4 |
-| Search | Fuse.js (client-side) → Algolia (Phase 4) |
-| Data source | Markdown files parsed at build time (MDX) |
-| Deployment | Vercel |
-| Database (Phase 4) | Supabase |
+| `GITHUB_TOKEN` | Increases GitHub API rate limit from 60 → 5000 req/hr |
 
-## Want to Help Build It?
+## Features
 
-The web UI is the highest-impact contribution you can make to PolicyForge. If you're a Next.js developer, open an issue tagged `phase-3` and `web-ui` to get involved.
-
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the **Web Builder** badge.
+- Full-text search across ID, name, registry keys, OMA-URIs
+- Filter by risk level (Critical / High / Medium / Low)
+- Filter by category (Security, BitLocker, ASR, Defender…)
+- One-click copy for registry path, OMA-URI, PowerShell
+- Policy detail modal with full markdown source
+- MITRE ATT&CK links
+- Light / dark mode (system-aware + manual toggle)
+- Keyboard shortcut: `/` to focus search, `Esc` to close modal
