@@ -1,6 +1,6 @@
 
 // Fetches all policy markdown files from the PolicyForge GitHub repo at build time.
-// No Supabase, no database — pure GitHub raw content + gray-matter frontmatter parsing.
+// No Supabase, no database — pure GitHub raw content + frontmatter parsing.
 
 export interface Policy {
   id: string;
@@ -26,25 +26,24 @@ export interface Policy {
 const GITHUB_API = 'https://api.github.com/repos/SamoTech/PolicyForge/contents';
 const RAW_BASE   = 'https://raw.githubusercontent.com/SamoTech/PolicyForge/main';
 
+// Matches actual repo directory structure
 const POLICY_DIRS = [
   'policies/windows/security',
-  'policies/windows/bitlocker',
-  'policies/windows/applocker',
-  'policies/windows/asr',
-  'policies/windows/defender',
   'policies/windows/privacy',
   'policies/windows/network',
-  'policies/windows/logging',
+  'policies/defender',
+  'policies/edge',
+  'policies/office',
+  'policies/server',
 ];
 
 async function listDir(dir: string): Promise<string[]> {
   try {
-    const res = await fetch(`${GITHUB_API}/${dir}`, {
-      headers: process.env.GITHUB_TOKEN
-        ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
-        : {},
-      next: { revalidate: 3600 },
-    });
+    const headers: Record<string, string> = {};
+    if (process.env.GITHUB_TOKEN) {
+      headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
+    }
+    const res = await fetch(`${GITHUB_API}/${dir}`, { headers });
     if (!res.ok) return [];
     const files = await res.json() as { name: string; type: string }[];
     return files
@@ -129,7 +128,9 @@ function inferRisk(fm: Record<string, string | string[]>, raw: string): string {
 
 function inferCategory(fm: Record<string, string | string[]>, filePath: string): string | string[] {
   if (fm.category) return fm.category;
-  const dir = filePath.split('/').slice(-2, -1)[0];
+  // Map directory names to human-readable categories
+  const parts = filePath.split('/');
+  const dir = parts[parts.length - 2];
   const map: Record<string, string> = {
     security: 'Security',
     bitlocker: 'BitLocker',
@@ -139,6 +140,9 @@ function inferCategory(fm: Record<string, string | string[]>, filePath: string):
     privacy: 'Privacy',
     network: 'Network',
     logging: 'Logging',
+    edge: 'Edge',
+    office: 'Office',
+    server: 'Server',
   };
   return map[dir] ?? 'General';
 }
@@ -155,9 +159,7 @@ export async function getAllPolicies(): Promise<Policy[]> {
   await Promise.all(
     allPaths.map(async (filePath) => {
       try {
-        const res = await fetch(`${RAW_BASE}/${filePath}`, {
-          next: { revalidate: 3600 },
-        });
+        const res = await fetch(`${RAW_BASE}/${filePath}`);
         if (!res.ok) return;
         const raw = await res.text();
         const fm = extractFrontmatter(raw);
