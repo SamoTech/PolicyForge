@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Fuse from 'fuse.js';
@@ -7,22 +7,34 @@ import PolicyCard from './PolicyCard';
 import PolicyModal from './PolicyModal';
 
 const RISK_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-
-const ALL_CATEGORIES = [
-  'Security', 'BitLocker', 'AppLocker', 'Attack Surface Reduction',
-  'Defender', 'Privacy', 'Network', 'Logging',
-];
-
 const RISK_LEVELS = ['critical', 'high', 'medium', 'low'];
 
+const RISK_COLORS: Record<string, string> = {
+  critical: 'var(--risk-critical-bar)',
+  high:     'var(--risk-high-bar)',
+  medium:   'var(--risk-medium-bar)',
+  low:      'var(--risk-low-bar)',
+};
+
 export default function Dashboard({ policies }: { policies: Policy[] }) {
-  const [query, setQuery]         = useState('');
-  const [riskFilter, setRisk]     = useState<string[]>([]);
-  const [catFilter, setCat]       = useState<string[]>([]);
-  const [selected, setSelected]   = useState<Policy | null>(null);
-  const [theme, setTheme]         = useState<'light' | 'dark'>('light');
-  const [copied, setCopied]       = useState<string | null>(null);
+  const [query, setQuery]       = useState('');
+  const [riskFilter, setRisk]   = useState<string[]>([]);
+  const [catFilter, setCat]     = useState<string[]>([]);
+  const [selected, setSelected] = useState<Policy | null>(null);
+  const [theme, setTheme]       = useState<'light' | 'dark'>('light');
+  const [viewMode, setView]     = useState<'grid' | 'list'>('grid');
+  const [navOpen, setNavOpen]   = useState(true);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // Derive categories dynamically from loaded policies
+  const allCategories = useMemo(() => {
+    const set = new Set<string>();
+    policies.forEach((p) => {
+      const cats = Array.isArray(p.category) ? p.category : [p.category];
+      cats.forEach((c) => set.add(c));
+    });
+    return Array.from(set).sort();
+  }, [policies]);
 
   useEffect(() => {
     const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -36,8 +48,7 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === '/' && !e.ctrlKey && !e.metaKey && document.activeElement?.tagName !== 'INPUT') {
-        e.preventDefault();
-        searchRef.current?.focus();
+        e.preventDefault(); searchRef.current?.focus();
       }
       if (e.key === 'Escape') setSelected(null);
     };
@@ -59,89 +70,82 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
   }), [policies]);
 
   const results = useMemo(() => {
-    let list: Policy[] = query.trim()
-      ? fuse.search(query).map((r) => r.item)
-      : [...policies];
-
-    if (riskFilter.length > 0) {
-      list = list.filter((p) => riskFilter.includes(p.risk_level.toLowerCase()));
-    }
-    if (catFilter.length > 0) {
-      list = list.filter((p) => {
-        const cats = Array.isArray(p.category) ? p.category : [p.category];
-        return cats.some((c) => catFilter.includes(c));
-      });
-    }
-
-    if (!query.trim()) {
-      list.sort((a, b) =>
-        (RISK_ORDER[a.risk_level.toLowerCase()] ?? 9) -
-        (RISK_ORDER[b.risk_level.toLowerCase()] ?? 9)
-      );
-    }
-
+    let list: Policy[] = query.trim() ? fuse.search(query).map((r) => r.item) : [...policies];
+    if (riskFilter.length > 0) list = list.filter((p) => riskFilter.includes(p.risk_level.toLowerCase()));
+    if (catFilter.length > 0) list = list.filter((p) => {
+      const cats = Array.isArray(p.category) ? p.category : [p.category];
+      return cats.some((c) => catFilter.includes(c));
+    });
+    if (!query.trim()) list.sort((a, b) =>
+      (RISK_ORDER[a.risk_level.toLowerCase()] ?? 9) - (RISK_ORDER[b.risk_level.toLowerCase()] ?? 9));
     return list;
   }, [query, riskFilter, catFilter, fuse, policies]);
 
   const toggleRisk = useCallback((r: string) =>
-    setRisk((prev) => prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]), []);
-
+    setRisk((p) => p.includes(r) ? p.filter((x) => x !== r) : [...p, r]), []);
   const toggleCat = useCallback((c: string) =>
-    setCat((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]), []);
+    setCat((p) => p.includes(c) ? p.filter((x) => x !== c) : [...p, c]), []);
+  const clearFilters = () => { setQuery(''); setRisk([]); setCat([]); };
 
+  const [copied, setCopied] = useState<string | null>(null);
   const copyToClipboard = useCallback((text: string, key: string) => {
     navigator.clipboard.writeText(text).then(() => {
-      setCopied(key);
-      setTimeout(() => setCopied(null), 1800);
+      setCopied(key); setTimeout(() => setCopied(null), 1800);
     });
   }, []);
 
-  const clearFilters = () => { setQuery(''); setRisk([]); setCat([]); };
-
   const statsCount = useMemo(() => {
     const counts: Record<string, number> = { critical: 0, high: 0, medium: 0, low: 0 };
-    policies.forEach((p) => {
-      const r = p.risk_level.toLowerCase();
-      if (r in counts) counts[r]++;
-    });
+    policies.forEach((p) => { const r = p.risk_level.toLowerCase(); if (r in counts) counts[r]++; });
     return counts;
   }, [policies]);
 
   const hasFilters = query || riskFilter.length > 0 || catFilter.length > 0;
 
   return (
-    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+
+      {/* ── TOP BAR ── */}
       <header style={{
-        background: 'var(--surface)',
-        borderBottom: '1px solid var(--border)',
-        padding: 'var(--space-4) var(--space-8)',
-        position: 'sticky', top: 0, zIndex: 40,
-        display: 'flex', alignItems: 'center', gap: 'var(--space-4)',
-        flexWrap: 'wrap',
+        height: 'var(--header-h)',
+        background: 'var(--primary)',
+        display: 'flex', alignItems: 'center',
+        padding: '0 var(--space-4)',
+        gap: 'var(--space-3)',
+        position: 'sticky', top: 0, zIndex: 50,
+        boxShadow: 'var(--shadow-4)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flex: '0 0 auto' }}>
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="PolicyForge" role="img">
-            <rect width="28" height="28" rx="7" fill="var(--primary)" />
-            <path d="M7 8h14M7 14h9M7 20h11" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
-            <circle cx="21" cy="20" r="3.5" fill="white" opacity=".9"/>
-            <path d="M21 18.5v1.5l1 1" stroke="var(--primary)" strokeWidth="1.3" strokeLinecap="round"/>
+        {/* Hamburger */}
+        <button
+          onClick={() => setNavOpen((o) => !o)}
+          aria-label="Toggle navigation"
+          style={{ color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-sm)', flexShrink: 0 }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <path d="M2 4h14M2 9h14M2 14h14"/>
           </svg>
-          <span style={{ fontWeight: 700, fontSize: 'var(--text-lg)', letterSpacing: '-0.01em' }}>
+        </button>
+
+        {/* Logo + wordmark */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+            <rect width="10" height="10" fill="#f25022"/>
+            <rect x="12" width="10" height="10" fill="#7fba00"/>
+            <rect y="12" width="10" height="10" fill="#00a4ef"/>
+            <rect x="12" y="12" width="10" height="10" fill="#ffb900"/>
+          </svg>
+          <span style={{ color: 'white', fontWeight: 600, fontSize: 'var(--text-base)', letterSpacing: '-0.01em' }}>
             PolicyForge
-          </span>
-          <span style={{
-            fontSize: 'var(--text-xs)', color: 'var(--text-muted)',
-            padding: '2px var(--space-2)', background: 'var(--surface-offset)',
-            borderRadius: 'var(--radius-full)', border: '1px solid var(--border)',
-          }}>
-            {policies.length} policies
           </span>
         </div>
 
-        <div style={{ flex: '1 1 320px', position: 'relative' }}>
-          <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-faint)', pointerEvents: 'none' }}
-            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        {/* Divider */}
+        <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,.3)', flexShrink: 0 }} />
+
+        {/* Search */}
+        <div style={{ flex: '1 1 400px', maxWidth: 560, position: 'relative' }}>
+          <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,.7)', pointerEvents: 'none' }}
+            width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>
           <input
@@ -151,136 +155,184 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search policies, registry keys, OMA-URIs… (press / to focus)"
             style={{
-              width: '100%', paddingLeft: 38, paddingRight: query ? 38 : 12,
-              paddingBlock: 9,
-              background: 'var(--surface-2)', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)',
-              color: 'var(--text)', transition: 'border-color var(--transition)',
+              width: '100%', paddingLeft: 32, paddingRight: query ? 32 : 10,
+              paddingBlock: 6,
+              background: 'rgba(255,255,255,.18)',
+              border: '1px solid rgba(255,255,255,.3)',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: 'var(--text-sm)',
+              color: 'white',
+              transition: 'background var(--transition), border-color var(--transition)',
             }}
           />
           {query && (
             <button onClick={() => setQuery('')} aria-label="Clear search"
-              style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', padding: 2 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,.7)', padding: 2 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           )}
         </div>
 
-        <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-          aria-label="Toggle theme"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 36, height: 36, borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border)', color: 'var(--text-muted)',
-            background: 'var(--surface-2)', flexShrink: 0,
-          }}>
-          {theme === 'dark'
-            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          }
-        </button>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          {/* View toggle */}
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,.15)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+            {(['grid', 'list'] as const).map((m) => (
+              <button key={m} onClick={() => setView(m)} aria-pressed={viewMode === m}
+                aria-label={`${m} view`}
+                style={{
+                  padding: '5px 8px',
+                  background: viewMode === m ? 'rgba(255,255,255,.25)' : 'transparent',
+                  color: 'white',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                {m === 'grid'
+                  ? <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>
+                  : <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 3h12M1 7h12M1 11h12"/></svg>
+                }
+              </button>
+            ))}
+          </div>
+
+          {/* Theme toggle */}
+          <button onClick={() => setTheme((t) => t === 'dark' ? 'light' : 'dark')}
+            aria-label="Toggle theme"
+            style={{ color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 'var(--radius-sm)' }}>
+            {theme === 'dark'
+              ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            }
+          </button>
+        </div>
       </header>
 
-      <div style={{ display: 'flex', flex: 1 }}>
-        {/* Sidebar */}
-        <aside style={{
-          width: 220, flexShrink: 0,
-          borderRight: '1px solid var(--border)',
-          padding: 'var(--space-6) var(--space-4)',
-          display: 'flex', flexDirection: 'column', gap: 'var(--space-6)',
-          position: 'sticky', top: 57, height: 'calc(100dvh - 57px)', overflowY: 'auto',
-        }}>
-          <div>
-            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 'var(--space-3)' }}>
-              Risk Overview
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+      {/* ── STATS BAR ── */}
+      <div style={{
+        background: 'var(--surface)',
+        borderBottom: '1px solid var(--border)',
+        padding: '0 var(--space-4)',
+        display: 'flex', alignItems: 'center', gap: 'var(--space-6)',
+        height: 40, overflowX: 'auto',
+      }}>
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', flexShrink: 0 }}>
+          <strong style={{ color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{policies.length}</strong> policies loaded
+        </span>
+        {RISK_LEVELS.map((r) => (
+          <div key={r} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', flexShrink: 0 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: RISK_COLORS[r], flexShrink: 0, display: 'inline-block' }} />
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{r}</span>
+            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text)', fontVariantNumeric: 'tabular-nums', minWidth: 18 }}>{statsCount[r] ?? 0}</span>
+          </div>
+        ))}
+        {hasFilters && (
+          <button onClick={clearFilters}
+            style={{ marginLeft: 'auto', fontSize: 'var(--text-xs)', color: 'var(--primary)', fontWeight: 500, padding: '2px var(--space-2)', border: '1px solid var(--primary)', borderRadius: 'var(--radius-sm)', flexShrink: 0 }}>
+            Clear filters
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+
+        {/* ── LEFT NAV ── */}
+        {navOpen && (
+          <nav style={{
+            width: 'var(--nav-width)', flexShrink: 0,
+            background: 'var(--surface)',
+            borderRight: '1px solid var(--border)',
+            padding: 'var(--space-4) 0',
+            position: 'sticky',
+            top: 'calc(var(--header-h) + 40px)',
+            height: 'calc(100dvh - var(--header-h) - 40px)',
+            overflowY: 'auto',
+            display: 'flex', flexDirection: 'column', gap: 'var(--space-4)',
+          }}>
+            <NavSection label="Risk Level">
               {RISK_LEVELS.map((r) => (
-                <div key={r} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-sm)' }}>
-                  <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: riskColor(r) }} />
-                  <span style={{ textTransform: 'capitalize', color: 'var(--text-muted)', flex: 1 }}>{r}</span>
-                  <span style={{ fontWeight: 600, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{statsCount[r] ?? 0}</span>
-                </div>
+                <NavItem
+                  key={r}
+                  label={r}
+                  count={statsCount[r] ?? 0}
+                  active={riskFilter.includes(r)}
+                  onClick={() => toggleRisk(r)}
+                  dot={RISK_COLORS[r]}
+                />
               ))}
-            </div>
-          </div>
+            </NavSection>
 
-          <div>
-            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 'var(--space-3)' }}>
-              Filter by Risk
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
-              {RISK_LEVELS.map((r) => (
-                <FilterChip key={r} label={r} active={riskFilter.includes(r)} onClick={() => toggleRisk(r)} color={riskColor(r)} />
+            <NavSection label="Category">
+              {allCategories.map((c) => (
+                <NavItem
+                  key={c}
+                  label={c}
+                  count={policies.filter((p) => {
+                    const cats = Array.isArray(p.category) ? p.category : [p.category];
+                    return cats.includes(c);
+                  }).length}
+                  active={catFilter.includes(c)}
+                  onClick={() => toggleCat(c)}
+                />
               ))}
+            </NavSection>
+
+            <div style={{ marginTop: 'auto', padding: 'var(--space-4) var(--space-4) 0', borderTop: '1px solid var(--border)' }}>
+              <a
+                href="https://github.com/SamoTech/PolicyForge"
+                target="_blank" rel="noopener noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+                  fontSize: 'var(--text-xs)', color: 'var(--text-faint)',
+                  textDecoration: 'none', padding: 'var(--space-2) var(--space-3)',
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                SamoTech/PolicyForge
+              </a>
             </div>
-          </div>
+          </nav>
+        )}
 
-          <div>
-            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 'var(--space-3)' }}>
-              Category
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
-              {ALL_CATEGORIES.map((c) => (
-                <FilterChip key={c} label={c} active={catFilter.includes(c)} onClick={() => toggleCat(c)} />
-              ))}
-            </div>
-          </div>
+        {/* ── MAIN CONTENT ── */}
+        <main style={{ flex: 1, padding: 'var(--space-5) var(--space-6)', overflowX: 'hidden', minWidth: 0 }}>
 
-          {hasFilters && (
-            <button onClick={clearFilters} style={{
-              fontSize: 'var(--text-xs)', color: 'var(--primary)', fontWeight: 500,
-              padding: 'var(--space-2) var(--space-3)', border: '1px solid var(--primary)',
-              borderRadius: 'var(--radius-md)', background: 'var(--primary-light)',
-              transition: 'opacity var(--transition)',
-            }}>
-              Clear all filters
-            </button>
-          )}
-
-          <div style={{ marginTop: 'auto', paddingTop: 'var(--space-6)', borderTop: '1px solid var(--divider)', fontSize: 'var(--text-xs)', color: 'var(--text-faint)' }}>
-            <a href="https://github.com/SamoTech/PolicyForge" target="_blank" rel="noopener noreferrer"
-              style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
-              SamoTech/PolicyForge
-            </a>
-          </div>
-        </aside>
-
-        {/* Main */}
-        <main style={{ flex: 1, padding: 'var(--space-6) var(--space-8)', overflowX: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
+          {/* Result count row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
             <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
               {results.length === policies.length
-                ? `All ${policies.length} policies`
-                : `${results.length} of ${policies.length} policies`}
-              {query && <> matching <strong style={{ color: 'var(--text)' }}>"{query}"</strong></>}
+                ? `Showing all ${policies.length} policies`
+                : `${results.length} of ${policies.length} results`}
+              {query && <> for <strong style={{ color: 'var(--text)' }}>&ldquo;{query}&rdquo;</strong></>}
             </span>
           </div>
 
           {results.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 'var(--space-12)', color: 'var(--text-muted)' }}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
-                style={{ margin: '0 auto var(--space-4)', opacity: .4 }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"
+                style={{ margin: '0 auto var(--space-4)', color: 'var(--text-faint)' }}>
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
-              <p style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>No policies found</p>
-              <p style={{ fontSize: 'var(--text-sm)' }}>Try adjusting your search or filters.</p>
+              <p style={{ fontWeight: 600, fontSize: 'var(--text-lg)', marginBottom: 'var(--space-2)', color: 'var(--text)' }}>No policies found</p>
+              <p style={{ fontSize: 'var(--text-sm)' }}>Try adjusting your search terms or clearing the filters.</p>
+              {hasFilters && (
+                <button onClick={clearFilters}
+                  style={{ marginTop: 'var(--space-4)', padding: 'var(--space-2) var(--space-4)', background: 'var(--primary)', color: 'white', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+                  Clear all filters
+                </button>
+              )}
             </div>
-          ) : (
+          ) : viewMode === 'grid' ? (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(min(360px, 100%), 1fr))',
-              gap: 'var(--space-4)',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(340px, 100%), 1fr))',
+              gap: 'var(--space-3)',
             }}>
               {results.map((p) => (
-                <PolicyCard
-                  key={p.id}
-                  policy={p}
-                  copiedKey={copied}
-                  onCopy={copyToClipboard}
-                  onOpen={() => setSelected(p)}
-                />
+                <PolicyCard key={p.id} policy={p} copiedKey={copied} onCopy={copyToClipboard} onOpen={() => setSelected(p)} />
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+              {results.map((p) => (
+                <PolicyListRow key={p.id} policy={p} onOpen={() => setSelected(p)} />
               ))}
             </div>
           )}
@@ -288,51 +340,89 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
       </div>
 
       {selected && (
-        <PolicyModal
-          policy={selected}
-          copiedKey={copied}
-          onCopy={copyToClipboard}
-          onClose={() => setSelected(null)}
-        />
+        <PolicyModal policy={selected} copiedKey={copied} onCopy={copyToClipboard} onClose={() => setSelected(null)} />
       )}
     </div>
   );
 }
 
-function riskColor(r: string): string {
-  const map: Record<string, string> = {
-    critical: '#ef4444',
-    high:     '#f97316',
-    medium:   '#eab308',
-    low:      '#22c55e',
-  };
-  return map[r.toLowerCase()] ?? '#94a3b8';
+/* ── Nav helpers ── */
+function NavSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div style={{
+        fontSize: 'var(--text-xs)', fontWeight: 600,
+        color: 'var(--text-faint)', textTransform: 'uppercase',
+        letterSpacing: '.07em', padding: 'var(--space-2) var(--space-4)',
+        marginBottom: 'var(--space-1)',
+      }}>
+        {label}
+      </div>
+      {children}
+    </div>
+  );
 }
 
-function FilterChip({ label, active, onClick, color }: {
-  label: string; active: boolean; onClick: () => void; color?: string;
+function NavItem({ label, count, active, onClick, dot }: {
+  label: string; count: number; active: boolean; onClick: () => void; dot?: string;
 }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
-        padding: '5px var(--space-3)',
-        borderRadius: 'var(--radius-sm)',
-        fontSize: 'var(--text-xs)',
-        fontWeight: active ? 600 : 400,
-        background: active ? 'var(--primary-light)' : 'transparent',
-        color: active ? 'var(--primary)' : 'var(--text-muted)',
-        border: `1px solid ${active ? 'var(--primary)' : 'transparent'}`,
-        cursor: 'pointer',
-        textAlign: 'left',
-        textTransform: 'capitalize',
-        transition: 'background var(--transition), color var(--transition)',
-        width: '100%',
-      }}
-    >
-      {color && <span style={{ width: 7, height: 7, borderRadius: '50%', background: active ? color : 'var(--text-faint)', flexShrink: 0 }} />}
-      {label}
+    <button onClick={onClick} style={{
+      width: '100%', display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+      padding: '6px var(--space-4)',
+      background: active ? 'var(--primary-light)' : 'transparent',
+      color: active ? 'var(--primary)' : 'var(--text-muted)',
+      fontSize: 'var(--text-sm)',
+      fontWeight: active ? 600 : 400,
+      borderLeft: active ? '2px solid var(--primary)' : '2px solid transparent',
+      textAlign: 'left',
+      textTransform: 'capitalize',
+      transition: 'background var(--transition), color var(--transition)',
+    }}>
+      {dot && <span style={{ width: 7, height: 7, borderRadius: '50%', background: active ? dot : 'var(--text-faint)', flexShrink: 0, display: 'inline-block' }} />}
+      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+      <span style={{ fontSize: 'var(--text-xs)', color: active ? 'var(--primary)' : 'var(--text-faint)', fontVariantNumeric: 'tabular-nums' }}>{count}</span>
     </button>
+  );
+}
+
+/* ── List row ── */
+function PolicyListRow({ policy, onOpen }: { policy: Policy; onOpen: () => void }) {
+  const riskBar = `var(--risk-${policy.risk_level.toLowerCase()}-bar, var(--primary))`;
+  const cats = Array.isArray(policy.category) ? policy.category : [policy.category];
+  return (
+    <button onClick={onOpen} style={{
+      width: '100%', display: 'flex', alignItems: 'center', gap: 'var(--space-4)',
+      padding: 'var(--space-3) var(--space-4)',
+      background: 'var(--surface-card)',
+      border: '1px solid var(--border)',
+      borderLeft: `3px solid ${riskBar}`,
+      borderRadius: 'var(--radius-md)',
+      textAlign: 'left',
+      transition: 'box-shadow var(--transition), background var(--transition)',
+      cursor: 'pointer',
+    }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-4)'; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+    >
+      <code style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', color: 'var(--primary)', fontWeight: 600, flexShrink: 0, minWidth: 140 }}>{policy.id}</code>
+      <span style={{ flex: 1, fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{policy.name}</span>
+      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', flexShrink: 0 }}>{cats[0]}</span>
+      <RiskBadge risk={policy.risk_level} />
+    </button>
+  );
+}
+
+export function RiskBadge({ risk }: { risk: string }) {
+  const key = risk.toLowerCase();
+  return (
+    <span style={{
+      fontSize: 'var(--text-xs)', fontWeight: 600, padding: '2px 8px',
+      borderRadius: 'var(--radius-sm)', textTransform: 'capitalize', flexShrink: 0,
+      background: `var(--risk-${key}-bg, var(--surface-offset))`,
+      color: `var(--risk-${key}-txt, var(--text-muted))`,
+    }}>
+      {risk}
+    </span>
   );
 }
