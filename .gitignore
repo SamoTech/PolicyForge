@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# PolicyForge generated output
+diff-output/
+intune-export.csv
+policyforge-verify-*.csv
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# ADMX parser output (local testing)
+output/

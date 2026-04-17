@@ -1,24 +1,27 @@
 ---
-name: Correction / Fix
-about: Report an inaccuracy in an existing policy entry
-title: '[Fix] '
-labels: correction
+name: Policy Correction
+about: Report incorrect policy guidance, wrong registry paths, wrong values, or inaccurate OMA-URI mappings
+labels: correction, policy-accuracy
 assignees: ''
 ---
 
-## Policy
+## Policy Details
 
-**File path**: `policies/...`  
-**Policy ID**: 
+- **Policy ID**: <!-- e.g. WIN-SECURITY-007 -->
+- **File**: <!-- e.g. policies/windows/wdigest/WIN-SECURITY-007.md -->
 
-## What is Wrong
+## What Is Wrong
 
-<!-- Describe the inaccuracy -->
+<!-- Describe the specific error. Include the incorrect value, path, or description as it appears in the file. -->
 
-## What it Should Be
+## Correct Value / Guidance
 
-<!-- Provide the correct information with a source/reference -->
+<!-- What the correct registry path, value, OMA-URI, or description should be. -->
 
-## Source
+## Source / Reference
 
-<!-- Official Microsoft docs, test result, etc. -->
+<!-- Link to the authoritative source: CIS Benchmark, DISA STIG, Microsoft Docs, CVE, etc. -->
+
+## Impact
+
+<!-- Describe the security impact of the incorrect guidance if left unfixed. -->
