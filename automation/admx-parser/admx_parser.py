@@ -8,13 +8,12 @@ Usage:
     python admx_parser.py --input /path/to/PolicyDefinitions --output ../../policies/ --lang en-US
 
 Requirements:
-    pip install lxml rich click
+    pip install click
 
 Author: PolicyForge Contributors
 License: MIT
 """
 
-import os
 import re
 import json
 import click
@@ -133,8 +132,14 @@ def policy_to_markdown(policy: dict, policy_id: str = '') -> str:
     lines.append('')
     lines.append('```powershell')
     if policy['registry_key'] and policy['registry_value']:
-        lines.append(f'Set-ItemProperty -Path "{policy["registry_key"]}" \\')
-        lines.append(f'  -Name "{policy["registry_value"]}" -Value 1 -Type DWord -Force')
+        # Sanitize registry paths to prevent injection in generated PowerShell
+        safe_key = re.sub(r'[^A-Za-z0-9\\{}_\s:.-]', '', policy['registry_key'])
+        safe_value = re.sub(r'[^A-Za-z0-9_\-]', '', policy['registry_value'])
+        if safe_key and safe_value:
+            lines.append(f'Set-ItemProperty -Path "{safe_key}" \\')
+            lines.append(f'  -Name "{safe_value}" -Value 1 -Type DWord -Force')
+        else:
+            lines.append('# Registry path contains unsafe characters — manual review required')
     else:
         lines.append('# Registry path auto-detection pending')
     lines.append('```')
