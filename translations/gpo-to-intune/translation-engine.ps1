@@ -1,153 +1,158 @@
 <#
 .SYNOPSIS
-    PolicyForge GPO-to-Intune Translation Engine
-    Reads a GPO backup or GPRESULT XML and outputs a CSV of Intune OMA-URI mappings.
-
-.DESCRIPTION
-    This script helps migrate Group Policy settings to Intune by:
-    1. Parsing a GPRESULT XML or GPO backup
-    2. Looking up each setting in the PolicyForge translation database
-    3. Outputting a CSV ready for Intune Custom Profile import
-
+    PolicyForge GPO → Intune Translation Engine
+    Translates Group Policy registry settings to Intune OMA-URI / CSP equivalents.
 .PARAMETER GpResultXml
-    Path to a GPRESULT /X output XML file
-    Generate with: gpresult /X C:\temp\gpresult.xml /F
-
+    Path to a GPRESULT /X output file. If omitted, the script scans the live registry.
 .PARAMETER OutputCsv
-    Output path for the Intune OMA-URI CSV (default: .\intune-export.csv)
-
+    Path for the CSV export. Defaults to .\intune-export.csv
 .PARAMETER ShowUnmapped
-    Also output policies with no known CSP equivalent
-
+    If set, prints registry values with no CSP mapping.
 .EXAMPLE
-    gpresult /X C:\temp\gpresult.xml /F
-    .\translation-engine.ps1 -GpResultXml C:\temp\gpresult.xml -OutputCsv .\intune-export.csv
-
+    .\translation-engine.ps1
+    .\translation-engine.ps1 -GpResultXml .\gpresult.xml -OutputCsv .\export.csv -ShowUnmapped
 .NOTES
     PolicyForge — https://github.com/SamoTech/PolicyForge
+    Run as Administrator for live registry scanning.
 #>
 
-[CmdletBinding()]
 param(
-    [Parameter(Mandatory=$false)]
-    [string]$GpResultXml,
-
-    [Parameter(Mandatory=$false)]
-    [string]$OutputCsv = ".\intune-export.csv",
-
+    [string]$GpResultXml   = '',
+    [string]$OutputCsv     = '.\intune-export.csv',
     [switch]$ShowUnmapped
 )
 
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Continue'
 
-# ── Translation Database ───────────────────────────────────────────────────────
-# Inline database of known GPO registry → Intune CSP mappings
-# Format: RegistryKey|ValueName → @{OmaUri; Value; DataType; Description}
+# ── Translation Database ───────────────────────────────────────────────────────────────
+# Keys are "HKLM\<path>|<ValueName>" (HKLM short form, no trailing backslash)
+# PolicyForgeId values must match the canonical mapping in policies/windows/README.md
 
 $TranslationDB = @{
-    # Defender
-    'HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection|DisableRealtimeMonitoring' = @{
-        OmaUri = './Device/Vendor/MSFT/Policy/Config/Defender/AllowRealtimeMonitoring'
+    # UAC — WIN-SECURITY-016
+    'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System|EnableLUA' = @{
+        PolicyForgeId    = 'WIN-SECURITY-016'
+        Description      = 'UAC Admin Approval Mode'
+        OmaUri           = './Device/Vendor/MSFT/Policy/Config/LocalPoliciesSecurityOptions/UserAccountControl_RunAllAdministratorsInAdminApprovalMode'
         RecommendedValue = '1'
-        DataType = 'Integer'
-        Description = 'Enable Real-Time Protection'
-        PolicyForgeId = 'DEF-001'
+        DataType         = 'Integer'
     }
-    'HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet|SpynetReporting' = @{
-        OmaUri = './Device/Vendor/MSFT/Policy/Config/Defender/AllowCloudProtection'
+    'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System|ConsentPromptBehaviorAdmin' = @{
+        PolicyForgeId    = 'WIN-SECURITY-016'
+        Description      = 'UAC Prompt Behavior for Admins'
+        OmaUri           = './Device/Vendor/MSFT/Policy/Config/LocalPoliciesSecurityOptions/UserAccountControl_BehaviorOfTheElevationPromptForAdministrators'
         RecommendedValue = '1'
-        DataType = 'Integer'
-        Description = 'Enable Cloud-Delivered Protection'
-        PolicyForgeId = 'DEF-002'
+        DataType         = 'Integer'
     }
-    'HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection|DisableBehaviorMonitoring' = @{
-        OmaUri = './Device/Vendor/MSFT/Policy/Config/Defender/AllowBehaviorMonitoring'
-        RecommendedValue = '1'
-        DataType = 'Integer'
-        Description = 'Enable Behavior Monitoring'
-        PolicyForgeId = 'DEF-003'
-    }
-    'HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Windows Defender Exploit Guard\Network Protection|EnableNetworkProtection' = @{
-        OmaUri = './Device/Vendor/MSFT/Policy/Config/Defender/EnableNetworkProtection'
-        RecommendedValue = '1'
-        DataType = 'Integer'
-        Description = 'Enable Network Protection (Block mode)'
-        PolicyForgeId = 'DEF-004'
-    }
-    'HKLM\SOFTWARE\Policies\Microsoft\Windows Defender|PUAProtection' = @{
-        OmaUri = './Device/Vendor/MSFT/Policy/Config/Defender/PUAProtection'
-        RecommendedValue = '1'
-        DataType = 'Integer'
-        Description = 'Enable PUA Protection'
-        PolicyForgeId = 'DEF-010'
-    }
-    # Privacy
-    'HKLM\Software\Policies\Microsoft\Windows\DataCollection|AllowTelemetry' = @{
-        OmaUri = './Device/Vendor/MSFT/Policy/Config/System/AllowTelemetry'
-        RecommendedValue = '0'
-        DataType = 'Integer'
-        Description = 'Disable Windows Telemetry'
-        PolicyForgeId = 'WIN-PRIVACY-001'
-    }
-    'HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search|AllowCortana' = @{
-        OmaUri = './Device/Vendor/MSFT/Policy/Config/Experience/AllowCortana'
-        RecommendedValue = '0'
-        DataType = 'Integer'
-        Description = 'Disable Cortana'
-        PolicyForgeId = 'WIN-PRIVACY-002'
-    }
-    # Security
-    'HKLM\SOFTWARE\Policies\Microsoft\Windows NT\CurrentVersion\Winlogon|EnableLUA' = @{
-        OmaUri = './Device/Vendor/MSFT/Policy/Config/LocalPoliciesSecurityOptions/UserAccountControl_RunAllAdministratorsInAdminApprovalMode'
-        RecommendedValue = '1'
-        DataType = 'Integer'
-        Description = 'Enable UAC Admin Approval Mode'
-        PolicyForgeId = 'WIN-SECURITY-014'
-    }
+    # NTLMv2 Auth Level — no canonical PolicyForge ID; tracked as WIN-SECURITY-NET-NTLMV2
+    # Note: LmCompatibilityLevel is NOT WIN-SECURITY-007 (that ID = WDigest)
     'HKLM\SYSTEM\CurrentControlSet\Control\Lsa|LmCompatibilityLevel' = @{
-        OmaUri = './Device/Vendor/MSFT/Policy/Config/LocalPoliciesSecurityOptions/NetworkSecurity_LANManagerAuthenticationLevel'
+        PolicyForgeId    = 'WIN-SECURITY-NET-NTLMV2'
+        Description      = 'LAN Manager Auth Level (NTLMv2 only)'
+        OmaUri           = './Device/Vendor/MSFT/Policy/Config/LocalPoliciesSecurityOptions/NetworkSecurity_LANManagerAuthenticationLevel'
         RecommendedValue = '5'
-        DataType = 'Integer'
-        Description = 'Require NTLMv2 (LM Auth Level 5)'
-        PolicyForgeId = 'WIN-SECURITY-007'
+        DataType         = 'Integer'
     }
+    # WDigest — WIN-SECURITY-007
     'HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest|UseLogonCredential' = @{
-        OmaUri = 'PowerShell Remediation required'
+        PolicyForgeId    = 'WIN-SECURITY-007'
+        Description      = 'Disable WDigest Authentication'
+        OmaUri           = './Device/Vendor/MSFT/Policy/Config/MSSLegacy/WDigestAuthentication'
         RecommendedValue = '0'
-        DataType = 'N/A'
-        Description = 'Disable WDigest Authentication'
-        PolicyForgeId = 'WIN-SECURITY-006'
+        DataType         = 'Integer'
     }
-    # Firewall
+    # LSA PPL — WIN-SECURITY-012
+    'HKLM\SYSTEM\CurrentControlSet\Control\Lsa|RunAsPPL' = @{
+        PolicyForgeId    = 'WIN-SECURITY-012'
+        Description      = 'Enable LSA Protection (PPL)'
+        OmaUri           = 'Not available via OMA-URI CSP — use Intune Settings Catalog > Local Security Authority > RunAsPPL or PowerShell Remediation'
+        RecommendedValue = '1'
+        DataType         = 'Integer'
+    }
+    # Anonymous SAM — WIN-SECURITY-015
+    'HKLM\SYSTEM\CurrentControlSet\Control\Lsa|RestrictAnonymousSAM' = @{
+        PolicyForgeId    = 'WIN-SECURITY-015'
+        Description      = 'Restrict Anonymous SAM Enumeration'
+        OmaUri           = './Device/Vendor/MSFT/Policy/Config/LocalPoliciesSecurityOptions/NetworkAccess_DoNotAllowAnonymousEnumerationOfSAMAccounts'
+        RecommendedValue = '1'
+        DataType         = 'Integer'
+    }
+    # Windows Firewall — WIN-SECURITY-005
     'HKLM\SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile|EnableFirewall' = @{
-        OmaUri = './Device/Vendor/MSFT/Firewall/MdmStore/DomainProfile/EnableFirewall'
+        PolicyForgeId    = 'WIN-SECURITY-005'
+        Description      = 'Enable Windows Firewall (Domain Profile)'
+        OmaUri           = './Device/Vendor/MSFT/Firewall/MdmStore/DomainProfile/EnableFirewall'
         RecommendedValue = 'true'
-        DataType = 'Boolean'
-        Description = 'Enable Windows Firewall (Domain Profile)'
-        PolicyForgeId = 'WIN-SECURITY-010'
+        DataType         = 'Boolean'
     }
-    # Audit
+    # LLMNR — WIN-SECURITY-003
+    'HKLM\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient|EnableMulticast' = @{
+        PolicyForgeId    = 'WIN-SECURITY-003'
+        Description      = 'Disable LLMNR'
+        OmaUri           = 'Not directly available via CSP — use PowerShell Remediation script or Intune Settings Catalog > DNS Client > Turn off Multicast Name Resolution'
+        RecommendedValue = '0'
+        DataType         = 'Integer'
+    }
+    # Defender Real-Time — DEF-001
+    'HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection|DisableRealtimeMonitoring' = @{
+        PolicyForgeId    = 'DEF-001'
+        Description      = 'Enable Defender Real-Time Protection'
+        OmaUri           = './Device/Vendor/MSFT/Policy/Config/Defender/AllowRealtimeMonitoring'
+        RecommendedValue = '1'
+        DataType         = 'Integer'
+    }
+    # Defender Cloud (MAPS) — DEF-002
+    # NOTE: The registry value SpynetReporting=2 means Advanced MAPS (registry level).
+    # The OMA-URI CSP AllowCloudProtection uses value 1 to enable cloud protection
+    # (CSP value 1 = enabled, regardless of MAPS level). These are different scales.
+    'HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet|SpynetReporting' = @{
+        PolicyForgeId    = 'DEF-002'
+        Description      = 'Enable Cloud Protection (Advanced MAPS)'
+        OmaUri           = './Device/Vendor/MSFT/Policy/Config/Defender/AllowCloudProtection'
+        RecommendedValue = '1'  # CSP value 1 = enabled. Registry Advanced MAPS = 2. These are different scales.
+        DataType         = 'Integer'
+    }
+    # PUA Protection — DEF-010
+    'HKLM\SOFTWARE\Policies\Microsoft\Windows Defender|PUAProtection' = @{
+        PolicyForgeId    = 'DEF-010'
+        Description      = 'Enable PUA Protection'
+        OmaUri           = './Device/Vendor/MSFT/Policy/Config/Defender/PUAProtection'
+        RecommendedValue = '1'
+        DataType         = 'Integer'
+    }
+    # Telemetry — WIN-PRIVACY-001
+    'HKLM\Software\Policies\Microsoft\Windows\DataCollection|AllowTelemetry' = @{
+        PolicyForgeId    = 'WIN-PRIVACY-001'
+        Description      = 'Disable Windows Telemetry'
+        OmaUri           = './Device/Vendor/MSFT/Policy/Config/System/AllowTelemetry'
+        RecommendedValue = '0'
+        DataType         = 'Integer'
+    }
+    # Process Creation Logging — WIN-SECURITY-009
     'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit|ProcessCreationIncludeCmdLine_Enabled' = @{
-        OmaUri = './Device/Vendor/MSFT/Policy/Config/Audit/DetailedTracking_AuditProcessCreation'
+        PolicyForgeId    = 'WIN-SECURITY-009'
+        Description      = 'Audit Process Creation (Event 4688 with command line)'
+        OmaUri           = './Device/Vendor/MSFT/Policy/Config/Audit/DetailedTracking_AuditProcessCreation'
         RecommendedValue = '3'
-        DataType = 'Integer'
-        Description = 'Audit Process Creation with Command Line'
-        PolicyForgeId = 'WIN-SECURITY-016'
+        DataType         = 'Integer'
+    }
+    # PS Script Block Logging — WIN-SECURITY-008
+    'HKLM\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging|EnableScriptBlockLogging' = @{
+        PolicyForgeId    = 'WIN-SECURITY-008'
+        Description      = 'Enable PowerShell Script Block Logging'
+        OmaUri           = './Device/Vendor/MSFT/Policy/Config/ADMX_PowerShellExecutionPolicy/EnableScriptBlockLogging'
+        RecommendedValue = '1'
+        DataType         = 'Integer'
     }
 }
 
-# ── Helper Functions ──────────────────────────────────────────────────────────
+# ── Helper Functions ──────────────────────────────────────────────────────────────────
 
 function Write-Status([string]$msg, [string]$color = 'Cyan') {
     Write-Host "[PolicyForge] $msg" -ForegroundColor $color
 }
 
 function Get-CurrentRegistryPolicies {
-    """
-    Enumerate current machine registry settings from known policy paths.
-    Returns a list of @{Key; ValueName; CurrentValue} objects.
-    """
     $policyRoots = @(
         'HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender',
         'HKLM:\SOFTWARE\Policies\Microsoft\Windows',
@@ -178,11 +183,10 @@ function Get-CurrentRegistryPolicies {
 function Invoke-Translation {
     param([array]$RegistrySettings)
 
-    $mapped = @()
+    $mapped   = @()
     $unmapped = @()
 
     foreach ($setting in $RegistrySettings) {
-        # Normalize key format for lookup
         $lookupKey = ($setting.Key -replace 'HKEY_LOCAL_MACHINE', 'HKLM') + "|" + $setting.ValueName
 
         if ($TranslationDB.ContainsKey($lookupKey)) {
@@ -196,7 +200,7 @@ function Invoke-Translation {
                 OmaUri           = $translation.OmaUri
                 RecommendedValue = $translation.RecommendedValue
                 DataType         = $translation.DataType
-                Status           = if ($translation.OmaUri -like 'PowerShell*') { 'Remediation Script' } else { 'Ready for Intune' }
+                Status           = if ($translation.OmaUri -like 'Not*') { 'Remediation Script' } else { 'Ready for Intune' }
             }
         } else {
             $unmapped += [PSCustomObject]@{
@@ -211,17 +215,15 @@ function Invoke-Translation {
     return @{ Mapped = $mapped; Unmapped = $unmapped }
 }
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── Main ──────────────────────────────────────────────────────────────────────────
 
 Write-Status "PolicyForge GPO → Intune Translation Engine" 'Green'
 Write-Status "Translation database: $($TranslationDB.Count) known mappings"
 
-# Get settings from live registry (or parse XML if provided)
 if ($GpResultXml -and (Test-Path $GpResultXml)) {
     Write-Status "Parsing GPRESULT XML: $GpResultXml"
-    # XML parsing would go here for GPRESULT format
     Write-Status "XML parsing mode: extracting registry extensions..." 'Yellow'
-    $settings = @() # Placeholder — extend for your XML structure
+    $settings = @()
 } else {
     Write-Status "No GPRESULT XML provided. Scanning live registry..."
     $settings = Get-CurrentRegistryPolicies
@@ -232,7 +234,6 @@ $results = Invoke-Translation -RegistrySettings $settings
 
 Write-Status "Mapped: $($results.Mapped.Count) | Unmapped: $($results.Unmapped.Count)"
 
-# Export CSV
 if ($results.Mapped.Count -gt 0) {
     $results.Mapped | Export-Csv -Path $OutputCsv -NoTypeInformation -Encoding UTF8
     Write-Status "Intune OMA-URI export saved: $OutputCsv" 'Green'
@@ -240,7 +241,6 @@ if ($results.Mapped.Count -gt 0) {
     Write-Status "No mapped policies found to export." 'Yellow'
 }
 
-# Show unmapped if requested
 if ($ShowUnmapped -and $results.Unmapped.Count -gt 0) {
     Write-Host ""
     Write-Status "Unmapped policies (no CSP equivalent in database):" 'Yellow'

@@ -57,7 +57,7 @@ This file maps the 50 most critical Windows security Group Policy settings to th
 | 22 | UAC Virtualize File/Reg Writes | `Security Settings > Local Policies > Security Options` | `EnableVirtualization=1` | `./Device/Vendor/MSFT/Policy/Config/LocalPoliciesSecurityOptions/UserAccountControl_VirtualizeFileAndRegistryWriteFailuresToPerUserLocations` | `1` | Integer |
 | 23 | Disable Anonymous SAM Enum | `Security Settings > Local Policies > Security Options` | `RestrictAnonymousSAM=1` | `./Device/Vendor/MSFT/Policy/Config/LocalPoliciesSecurityOptions/NetworkAccess_DoNotAllowAnonymousEnumerationOfSAMAccounts` | `1` | Integer |
 | 24 | LAN Manager Auth Level (NTLMv2) | `Security Settings > Local Policies > Security Options` | `LmCompatibilityLevel=5` | `./Device/Vendor/MSFT/Policy/Config/LocalPoliciesSecurityOptions/NetworkSecurity_LANManagerAuthenticationLevel` | `5` | Integer |
-| 25 | Disable WDigest Auth | `Windows Components > Credential Delegation` | `UseLogonCredential=0` | `./Device/Vendor/MSFT/Policy/Config/MSSLegacy/NetworkSecurity_DoNotStoreLANManagerHashValueOnNextPasswordChange` | `1` | Integer |
+| 25 | Disable WDigest Auth | `Windows Components > Credential Delegation` | `UseLogonCredential=0` | `./Device/Vendor/MSFT/Policy/Config/MSSLegacy/WDigestAuthentication` | `0` | Integer |
 
 ---
 
@@ -69,11 +69,11 @@ This file maps the 50 most critical Windows security Group Policy settings to th
 | 27 | Windows Firewall — Private ON | `Windows Settings > Security Settings > Windows Firewall` | `EnableFirewall=1` | `./Device/Vendor/MSFT/Firewall/MdmStore/PrivateProfile/EnableFirewall` | `true` | Boolean |
 | 28 | Windows Firewall — Public ON | `Windows Settings > Security Settings > Windows Firewall` | `EnableFirewall=1` | `./Device/Vendor/MSFT/Firewall/MdmStore/PublicProfile/EnableFirewall` | `true` | Boolean |
 | 29 | Block Inbound by Default (Public) | `Windows Firewall > Public Profile` | `DefaultInboundAction=1` | `./Device/Vendor/MSFT/Firewall/MdmStore/PublicProfile/DefaultInboundAction` | `1` | Integer |
-| 30 | Disable LLMNR | `Windows Components > DNS Client` | `EnableMulticast=0` | `./Device/Vendor/MSFT/Policy/Config/MSSLegacy/WDigestAuthentication` | — | — |
+| 30 | Disable LLMNR | `Windows Components > DNS Client` | `EnableMulticast=0` | Not directly available via CSP — use PowerShell Remediation script or Intune Settings Catalog > DNS Client > Turn off Multicast Name Resolution | — | — |
 | 31 | Disable NetBIOS over TCP/IP | `Network > TCP/IP Settings` | `NetbiosOptions=2` | Not directly available — use PowerShell via Remediation script | — | — |
 | 32 | Require NLA for RDP | `Windows Components > Remote Desktop Services > RDS Session Host > Security` | `UserAuthentication=1` | `./Device/Vendor/MSFT/Policy/Config/RemoteDesktopServices/RequireSecureRPCCommunication` | `1` | Integer |
 | 33 | Disable RDP (if not needed) | `Windows Components > Remote Desktop Services` | `fDenyTSConnections=1` | `./Device/Vendor/MSFT/Policy/Config/RemoteDesktopServices/AllowRemoteDesktopService` | `0` | Integer |
-| 34 | Disable SMBv1 | `Windows Components > LanmanServer` | `SMB1=0` (Features) | Not via CSP — use: `./Device/Vendor/MSFT/WindowsDefenderApplicationGuard/Settings/AllowWindowsDefenderApplicationGuard` or PowerShell Remediation | — | — |
+| 34 | Disable SMBv1 | `Windows Components > LanmanServer` | `SMB1=0` (Features) | Not via CSP — use PowerShell Remediation: `Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol` | — | — |
 
 ---
 
@@ -94,49 +94,20 @@ This file maps the 50 most critical Windows security Group Policy settings to th
 
 | # | Policy Name | GPO Path | Registry Key | OMA-URI | Value | Type |
 |---|---|---|---|---|---|---|
-| 41 | PowerShell Execution Policy | `Windows Components > Windows PowerShell` | `ExecutionPolicy=RemoteSigned` | `./Device/Vendor/MSFT/Policy/Config/Power/AllowHibernate` | Use PowerShell Remediation | — |
+| 41 | PowerShell Execution Policy | `Windows Components > Windows PowerShell` | `ExecutionPolicy=RemoteSigned` | Not available via CSP — use Intune PowerShell Remediation script or Settings Catalog > Windows PowerShell > Turn on Script Execution | — | — |
 | 42 | Enable Script Block Logging | `Windows Components > Windows PowerShell` | `EnableScriptBlockLogging=1` | `./Device/Vendor/MSFT/Policy/Config/ADMX_PowerShellExecutionPolicy/EnableScriptBlockLogging` | `<enabled/>` | String |
-| 43 | Enable Module Logging | `Windows Components > Windows PowerShell` | `EnableModuleLogging=1` | `./Device/Vendor/MSFT/Policy/Config/ADMX_PowerShellExecutionPolicy/ModuleLogging` | `<enabled/>` | String |
+| 43 | Enable Module Logging | `Windows Components > Windows PowerShell` | `EnableModuleLogging=1` | `./Device/Vendor/MSFT/Policy/Config/ADMX_PowerShellExecutionPolicy/TurnOnModuleLogging` | `<enabled/>` | String |
 | 44 | Enable Transcription | `Windows Components > Windows PowerShell` | `EnableTranscripting=1` | `./Device/Vendor/MSFT/Policy/Config/ADMX_PowerShellExecutionPolicy/EnableTranscripting` | `<enabled/>` | String |
 
 ---
 
-## 📋 Audit & Logging
+## 📊 Audit & Logging
 
 | # | Policy Name | GPO Path | Registry Key | OMA-URI | Value | Type |
 |---|---|---|---|---|---|---|
-| 45 | Audit Process Creation (Event 4688) | `Advanced Audit Policy > Detailed Tracking` | `ProcessCreationIncludeCmdLine_Enabled=1` | `./Device/Vendor/MSFT/Policy/Config/Audit/DetailedTracking_AuditProcessCreation` | `3` | Integer |
-| 46 | Audit Logon Events | `Advanced Audit Policy > Logon/Logoff` | Audit policy | `./Device/Vendor/MSFT/Policy/Config/Audit/AccountLogon_AuditKerberosAuthenticationService` | `3` | Integer |
-| 47 | Audit Account Lockout | `Advanced Audit Policy > Logon/Logoff` | Audit policy | `./Device/Vendor/MSFT/Policy/Config/Audit/AccountLogon_AuditKerberosServiceTicketOperations` | `3` | Integer |
-| 48 | Security Log Max Size (196MB) | `Windows Settings > Security Settings > Event Log` | `MaxSize=200704` | `./Device/Vendor/MSFT/Policy/Config/EventLog/SpecifyMaximumFileSizeSecurityLog` | `204800` | Integer |
-| 49 | Audit Privilege Use | `Advanced Audit Policy > Privilege Use` | Audit policy | `./Device/Vendor/MSFT/Policy/Config/Audit/PrivilegeUse_AuditSensitivePrivilegeUse` | `3` | Integer |
-| 50 | Audit Object Access | `Advanced Audit Policy > Object Access` | Audit policy | `./Device/Vendor/MSFT/Policy/Config/Audit/ObjectAccess_AuditFileSystem` | `3` | Integer |
-
----
-
-## Notes & Limitations
-
-> **Audit values**: `0` = None, `1` = Success, `2` = Failure, `3` = Success + Failure
-
-### Policies Without a Direct CSP Equivalent
-
-Some GPO settings have no direct OMA-URI CSP mapping. For these, use Intune **Remediation Scripts** (PowerShell):
-
-| Policy | Workaround |
-|---|---|
-| Disable SMBv1 | PowerShell Remediation: `Disable-WindowsOptionalFeature` |
-| Disable NetBIOS over TCP/IP | PowerShell Remediation: WMI NIC configuration |
-| Rename Administrator Account | PowerShell Remediation: `Rename-LocalUser` |
-| LAN Manager hash storage | PowerShell Remediation: Registry write |
-
-### Migration Workflow
-
-```
-1. Export current GPO settings via GPRESULT /H report.html
-2. Map each setting using this table
-3. Create Intune Configuration Profile (Custom OMA-URI)
-4. Deploy to pilot group (10% of devices)
-5. Verify via Intune compliance reports
-6. Expand to full fleet
-7. Remove legacy GPO after 30-day validation
-```
+| 45 | Audit Process Creation | `Computer Configuration > Windows Settings > Security Settings > Advanced Audit` | `ProcessCreationIncludeCmdLine_Enabled=1` | `./Device/Vendor/MSFT/Policy/Config/Audit/DetailedTracking_AuditProcessCreation` | `3` | Integer |
+| 46 | Audit Logon Events | `Computer Configuration > Windows Settings > Security Settings > Advanced Audit` | N/A (auditpol) | `./Device/Vendor/MSFT/Policy/Config/Audit/AccountLogon_AuditCredentialValidation` | `3` | Integer |
+| 47 | Audit Object Access | `Computer Configuration > Windows Settings > Security Settings > Advanced Audit` | N/A (auditpol) | `./Device/Vendor/MSFT/Policy/Config/Audit/ObjectAccess_AuditFileSystem` | `3` | Integer |
+| 48 | Audit Policy Changes | `Computer Configuration > Windows Settings > Security Settings > Advanced Audit` | N/A (auditpol) | `./Device/Vendor/MSFT/Policy/Config/Audit/PolicyChange_AuditAuditPolicyChange` | `3` | Integer |
+| 49 | Event Log — Security Max Size | `Computer Configuration > Windows Settings > Security Settings > Event Log` | `MaxSize=196608` | `./Device/Vendor/MSFT/Policy/Config/EventLogService/SpecifyMaximumFileSizeSecurityLog` | `196608` | Integer |
+| 50 | Event Log — Application Max Size | `Computer Configuration > Windows Settings > Security Settings > Event Log` | `MaxSize=32768` | `./Device/Vendor/MSFT/Policy/Config/EventLogService/SpecifyMaximumFileSizeApplicationLog` | `32768` | Integer |
