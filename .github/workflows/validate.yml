@@ -28,7 +28,7 @@ jobs:
       - name: Run validator
         run: python .github/scripts/validate_policies.py
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: validation-report
