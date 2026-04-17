@@ -1,0 +1,14 @@
+PolicyId,Description,RegistryPath,ValueName,ExpectedValue,DataType
+WIN-SECURITY-007,Disable WDigest Authentication,HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest,UseLogonCredential,0,DWord
+WIN-SECURITY-012,Enable LSA Protection (PPL),HKLM\SYSTEM\CurrentControlSet\Control\Lsa,RunAsPPL,1,DWord
+WIN-SECURITY-015,Restrict Anonymous SAM Enumeration,HKLM\SYSTEM\CurrentControlSet\Control\Lsa,RestrictAnonymousSAM,1,DWord
+WIN-SECURITY-NET-NTLMV2,NTLMv2 only (LM auth level 5),HKLM\SYSTEM\CurrentControlSet\Control\Lsa,LmCompatibilityLevel,5,DWord
+WIN-SECURITY-003,Disable LLMNR,HKLM\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient,EnableMulticast,0,DWord
+DEF-001,Enable Real-Time Protection,HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection,DisableRealtimeMonitoring,0,DWord
+DEF-002,Enable Cloud Protection (Advanced MAPS),HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet,SpynetReporting,2,DWord
+DEF-010,Enable PUA Protection,HKLM\SOFTWARE\Policies\Microsoft\Windows Defender,PUAProtection,1,DWord
+WIN-PRIVACY-001,Disable Windows Telemetry,HKLM\Software\Policies\Microsoft\Windows\DataCollection,AllowTelemetry,0,DWord
+WIN-SECURITY-016,Enable UAC Admin Approval Mode,HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System,EnableLUA,1,DWord
+WIN-SECURITY-016,UAC prompt for credentials,HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System,ConsentPromptBehaviorAdmin,1,DWord
+WIN-SECURITY-009,Enable Event 4688 command line logging,HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit,ProcessCreationIncludeCmdLine_Enabled,1,DWord
+WIN-SECURITY-008,Enable PS Script Block Logging,HKLM\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging,EnableScriptBlockLogging,1,DWord
