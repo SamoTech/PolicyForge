@@ -21,10 +21,10 @@ export default function PolicyModal({ policy, copiedKey, onCopy, onClose }: Prop
   }, []);
 
   const tabs: { id: Tab; label: string; show: boolean }[] = [
-    { id: 'overview',   label: 'Overview',   show: true },
-    { id: 'registry',   label: 'Registry',   show: !!(policy.registry_path || policy.oma_uri) },
-    { id: 'powershell', label: 'PowerShell', show: !!policy.powershell },
-    { id: 'raw',        label: 'Raw',        show: true },
+    { id: 'overview'   as Tab, label: 'Overview',   show: true },
+    { id: 'registry'   as Tab, label: 'Registry',   show: !!(policy.registry_path || policy.oma_uri) },
+    { id: 'powershell' as Tab, label: 'PowerShell', show: !!policy.powershell },
+    { id: 'raw'        as Tab, label: 'Raw',        show: true },
   ].filter((t) => t.show);
 
   const riskKey = policy.risk_level.toLowerCase();
