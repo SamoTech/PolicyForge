@@ -1,133 +1,119 @@
 'use client';
 
-import type { Policy } from '@/lib/policies';
-import { RiskBadge } from './Dashboard';
+import { type Policy } from '@/lib/policies';
 
-interface Props {
-  policy: Policy;
-  copiedKey: string | null;
-  onCopy: (text: string, key: string) => void;
-  onOpen: () => void;
-}
+const RISK_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+  Critical: { bg: 'rgba(239,68,68,0.12)',  color: '#ef4444', label: 'Critical' },
+  High:     { bg: 'rgba(249,115,22,0.12)', color: '#f97316', label: 'High'     },
+  Medium:   { bg: 'rgba(234,179,8,0.12)',  color: '#eab308', label: 'Medium'   },
+  Low:      { bg: 'rgba(34,197,94,0.12)',  color: '#22c55e', label: 'Low'      },
+};
 
-export default function PolicyCard({ policy, copiedKey, onCopy, onOpen }: Props) {
-  const riskKey = policy.risk_level.toLowerCase();
-  const riskBar = `var(--risk-${riskKey}-bar, var(--primary))`;
-  const cats = Array.isArray(policy.category) ? policy.category : [policy.category];
+export default function PolicyCard({
+  policy, index, onClick,
+}: { policy: Policy; index: number; onClick: () => void }) {
+  const rs = RISK_STYLES[policy.risk];
 
   return (
-    <article
-      onClick={onOpen}
+    <button
+      onClick={onClick}
+      className="fade-up"
       style={{
-        background: 'var(--surface-card)',
+        animationDelay: `${Math.min(index * 30, 300)}ms`,
+        textAlign: 'left',
+        width: '100%',
+        background: 'var(--surface)',
         border: '1px solid var(--border)',
-        borderTop: `3px solid ${riskBar}`,
         borderRadius: 'var(--radius-lg)',
-        padding: 'var(--space-4)',
+        padding: 'var(--space-5)',
         cursor: 'pointer',
+        transition: 'border-color 0.18s, box-shadow 0.18s, transform 0.18s',
         display: 'flex',
         flexDirection: 'column',
         gap: 'var(--space-3)',
-        transition: 'box-shadow var(--transition), border-color var(--transition)',
-        boxShadow: 'var(--shadow-2)',
       }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-8)';
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.borderColor = 'var(--border-hover)';
+        el.style.boxShadow = 'var(--shadow-2)';
+        el.style.transform = 'translateY(-2px)';
       }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-2)';
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.borderColor = 'var(--border)';
+        el.style.boxShadow = 'none';
+        el.style.transform = 'translateY(0)';
       }}
     >
-      {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-        <code style={{
-          fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)',
-          color: 'var(--primary)', fontWeight: 600,
-          background: 'var(--primary-light)', padding: '2px 7px',
-          borderRadius: 'var(--radius-sm)', flexShrink: 0,
+      {/* Top row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-2)' }}>
+        <span style={{
+          fontSize: 'var(--text-xs)', fontWeight: 600,
+          color: 'var(--primary)', letterSpacing: '0.04em',
+          fontFamily: 'monospace',
         }}>
           {policy.id}
-        </code>
-        <RiskBadge risk={policy.risk_level} />
-      </div>
-
-      {/* Title */}
-      <h2 style={{
-        fontSize: 'var(--text-base)', fontWeight: 600, lineHeight: 1.35,
-        color: 'var(--text)', margin: 0,
-      }}>
-        {policy.name}
-      </h2>
-
-      {/* Category chips */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1)' }}>
-        {cats.slice(0, 3).map((c) => (
-          <span key={c} style={{
-            fontSize: 'var(--text-xs)', color: 'var(--text-muted)',
-            background: 'var(--surface-offset)', padding: '2px 8px',
-            borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)',
-          }}>{c}</span>
-        ))}
-      </div>
-
-      {/* Registry row */}
-      {policy.registry_path && (
-        <div style={{
-          background: 'var(--surface-offset)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-sm)',
-          padding: 'var(--space-2) var(--space-3)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)',
+        </span>
+        <span style={{
+          fontSize: 'var(--text-xs)', fontWeight: 600,
+          background: rs.bg, color: rs.color,
+          padding: '2px 8px', borderRadius: 'var(--radius-full)',
+          flexShrink: 0,
         }}>
-          <code style={{
-            fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)',
-            color: 'var(--text-muted)', flex: 1, minWidth: 0,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>
-            {policy.registry_value} = {policy.registry_data}
-          </code>
-          <button
-            onClick={(e) => { e.stopPropagation(); onCopy(`${policy.registry_path}\\${policy.registry_value}`, `reg-${policy.id}`); }}
-            title="Copy registry path" aria-label="Copy registry path"
-            style={{
-              padding: '3px 6px', borderRadius: 'var(--radius-sm)', flexShrink: 0,
-              background: copiedKey === `reg-${policy.id}` ? 'var(--primary-light)' : 'var(--surface-card)',
-              color: copiedKey === `reg-${policy.id}` ? 'var(--primary)' : 'var(--text-faint)',
-              border: '1px solid var(--border)', fontSize: 'var(--text-xs)',
-              transition: 'background var(--transition), color var(--transition)',
-            }}
-          >
-            {copiedKey === `reg-${policy.id}` ? '✓' : (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-              </svg>
-            )}
-          </button>
-        </div>
-      )}
-
-      {/* Footer */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 'var(--space-2)', borderTop: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
-          {policy.mitre && (
-            <a
-              href={`https://attack.mitre.org/techniques/${policy.mitre}`}
-              target="_blank" rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              style={{ fontSize: 'var(--text-xs)', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', textDecoration: 'none' }}
-            >
-              {policy.mitre}
-            </a>
-          )}
-          {policy.test_status?.includes('✅') && (
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-success)' }}>✅ Tested</span>
-          )}
-        </div>
-        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--primary)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
-          Details
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 5h6M5 2l3 3-3 3"/></svg>
+          {rs.label}
         </span>
       </div>
-    </article>
+
+      {/* Name */}
+      <h3 style={{
+        fontSize: 'var(--text-sm)', fontWeight: 600,
+        color: 'var(--text)', lineHeight: 1.35,
+      }}>
+        {policy.name}
+      </h3>
+
+      {/* Description */}
+      <p style={{
+        fontSize: 'var(--text-xs)', color: 'var(--text-muted)',
+        lineHeight: 1.6, display: '-webkit-box',
+        WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+      }}>
+        {policy.description}
+      </p>
+
+      {/* Footer */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'var(--space-1)' }}>
+        {/* Category pill */}
+        <span style={{
+          fontSize: 'var(--text-xs)', color: 'var(--text-muted)',
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid var(--border)',
+          padding: '2px 8px', borderRadius: 'var(--radius-full)',
+        }}>
+          {policy.category}
+        </span>
+
+        {/* MITRE badges */}
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {policy.mitre.slice(0, 2).map(t => (
+            <span key={t} style={{
+              fontSize: 10, fontWeight: 600,
+              color: '#3b82f6',
+              background: 'rgba(59,130,246,0.1)',
+              padding: '2px 6px', borderRadius: 'var(--radius-full)',
+              fontFamily: 'monospace',
+            }}>
+              {t}
+            </span>
+          ))}
+          {policy.mitre.length > 2 && (
+            <span style={{ fontSize: 10, color: 'var(--text-faint)' }}>
+              +{policy.mitre.length - 2}
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
   );
 }
