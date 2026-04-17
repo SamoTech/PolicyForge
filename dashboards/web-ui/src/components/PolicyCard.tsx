@@ -10,16 +10,24 @@ const RISK_STYLES: Record<string, { bg: string; color: string; label: string }> 
 };
 
 export default function PolicyCard({
-  policy, index, onClick,
-}: { policy: Policy; index: number; onClick: () => void }) {
-  const rs = RISK_STYLES[policy.risk];
+  policy, index, onClick, onOpen, copiedKey, onCopy,
+}: {
+  policy: Policy;
+  index?: number;
+  onClick?: () => void;
+  onOpen?: () => void;
+  copiedKey?: string | null;
+  onCopy?: (text: string, key: string) => void;
+}) {
+  const handleClick = onOpen ?? onClick ?? (() => {});
+  const rs = RISK_STYLES[policy.risk_level] ?? RISK_STYLES['Low'];
 
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       className="fade-up"
       style={{
-        animationDelay: `${Math.min(index * 30, 300)}ms`,
+        animationDelay: `${Math.min((index ?? 0) * 30, 300)}ms`,
         textAlign: 'left',
         width: '100%',
         background: 'var(--surface)',
@@ -91,7 +99,7 @@ export default function PolicyCard({
           border: '1px solid var(--border)',
           padding: '2px 8px', borderRadius: 'var(--radius-full)',
         }}>
-          {policy.category}
+          {Array.isArray(policy.category) ? policy.category[0] : policy.category}
         </span>
 
         {/* MITRE badges */}
