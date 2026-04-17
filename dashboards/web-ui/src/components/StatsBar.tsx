@@ -9,7 +9,7 @@ const RISK_COLORS: Record<string, string> = {
 
 export default function StatsBar({ total, shown }: { total: number; shown: number }) {
   const counts = ['Critical','High','Medium','Low'].map(r => ({
-    r, count: POLICIES.filter(p => p.risk === r).length,
+    r, count: POLICIES.filter(p => p.risk_level === r).length,
   }));
 
   return (

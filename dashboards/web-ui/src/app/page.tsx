@@ -8,7 +8,15 @@ import PolicyModal from '@/components/PolicyModal';
 import StatsBar from '@/components/StatsBar';
 
 const fuse = new Fuse(POLICIES, {
-  keys: ['id', 'name', 'category', 'description', 'mitre', 'registry', 'compliance'],
+  keys: [
+    { name: 'id',             weight: 0.35 },
+    { name: 'name',           weight: 0.30 },
+    { name: 'description',    weight: 0.15 },
+    { name: 'registry_path',  weight: 0.08 },
+    { name: 'registry_value', weight: 0.05 },
+    { name: 'oma_uri',        weight: 0.04 },
+    { name: 'raw',            weight: 0.03 },
+  ],
   threshold: 0.35,
   includeScore: true,
 });

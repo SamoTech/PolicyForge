@@ -9,11 +9,17 @@ const RISK_COLOR: Record<string, string> = {
 
 type Tab = 'registry' | 'powershell' | 'intune';
 
-export default function PolicyModal({ policy, onClose }: { policy: Policy; onClose: () => void }) {
+export default function PolicyModal({
+  policy, onClose, copiedKey, onCopy,
+}: {
+  policy: Policy;
+  onClose: () => void;
+  copiedKey?: string | null;
+  onCopy?: (text: string, key: string) => void;
+}) {
   const [tab, setTab]       = useState<Tab>('registry');
   const [copied, setCopied] = useState(false);
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
@@ -25,18 +31,25 @@ export default function PolicyModal({ policy, onClose }: { policy: Policy; onClo
   }, [onClose]);
 
   const tabContent: Record<Tab, string> = {
-    registry:   policy.registry,
+    registry:   `${policy.registry_path}\n${policy.registry_value}`,
     powershell: policy.powershell,
-    intune:     policy.oma,
+    intune:     policy.oma_uri,
   };
 
   const copy = useCallback(async () => {
-    await navigator.clipboard.writeText(tabContent[tab]);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
-  }, [tab, tabContent]);
+    const text = tabContent[tab];
+    if (onCopy) {
+      onCopy(text, `modal-${tab}`);
+    } else {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    }
+  }, [tab, tabContent, onCopy]);
 
-  const riskColor = RISK_COLOR[policy.risk];
+  const isCopied = onCopy ? copiedKey === `modal-${tab}` : copied;
+  const riskColor = RISK_COLOR[policy.risk_level] ?? '#7a7a8a';
+  const category = Array.isArray(policy.category) ? policy.category.join(', ') : policy.category;
 
   return (
     <>
@@ -87,10 +100,10 @@ export default function PolicyModal({ policy, onClose }: { policy: Policy; onClo
                   {policy.id}
                 </code>
                 <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: riskColor, background: `${riskColor}1a`, padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>
-                  {policy.risk} Risk
+                  {policy.risk_level} Risk
                 </span>
                 <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                  {policy.category}
+                  {category}
                 </span>
               </div>
               <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>
@@ -124,14 +137,14 @@ export default function PolicyModal({ policy, onClose }: { policy: Policy; onClo
 
             {/* Meta grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
-              <MetaBox label="Applies To" value={policy.appliesTo} />
+              <MetaBox label="Applies To" value={policy.applies_to} />
               <MetaBox label="Compliance" value={policy.compliance.join(' · ')} mono />
             </div>
 
             {/* MITRE */}
             <div>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-faint)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 'var(--space-2)' }}>
-                MITRE ATT&CK
+                MITRE ATT&amp;CK
               </p>
               <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                 {policy.mitre.map(t => (
@@ -158,7 +171,6 @@ export default function PolicyModal({ policy, onClose }: { policy: Policy; onClo
 
             {/* Code tabs */}
             <div>
-              {/* Tab bar */}
               <div style={{ display: 'flex', gap: 'var(--space-1)', marginBottom: 'var(--space-2)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-1)' }}>
                 {(['registry', 'powershell', 'intune'] as Tab[]).map(t => (
                   <button
@@ -179,7 +191,6 @@ export default function PolicyModal({ policy, onClose }: { policy: Policy; onClo
                 ))}
               </div>
 
-              {/* Code block */}
               <div style={{ position: 'relative' }}>
                 <pre style={{ margin: 0, fontSize: 12, lineHeight: 1.65 }}>
                   <code>{tabContent[tab]}</code>
@@ -189,7 +200,7 @@ export default function PolicyModal({ policy, onClose }: { policy: Policy; onClo
                   style={{
                     position: 'absolute', top: 'var(--space-2)', right: 'var(--space-2)',
                     fontSize: 'var(--text-xs)', fontWeight: 600,
-                    color: copied ? '#22c55e' : 'var(--text-muted)',
+                    color: isCopied ? '#22c55e' : 'var(--text-muted)',
                     background: 'rgba(255,255,255,0.06)',
                     border: '1px solid var(--border)',
                     borderRadius: 'var(--radius-sm)',
@@ -197,7 +208,7 @@ export default function PolicyModal({ policy, onClose }: { policy: Policy; onClo
                     transition: 'color 0.18s',
                   }}
                 >
-                  {copied ? '✓ Copied' : 'Copy'}
+                  {isCopied ? '✓ Copied' : 'Copy'}
                 </button>
               </div>
             </div>
