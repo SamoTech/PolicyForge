@@ -13,7 +13,7 @@
   <a href="https://github.com/SamoTech/PolicyForge/stargazers"><img src="https://img.shields.io/github/stars/SamoTech/PolicyForge?style=flat-square&color=gold" alt="Stars"/></a>
   <a href="https://github.com/SamoTech/PolicyForge/graphs/contributors"><img src="https://img.shields.io/github/contributors/SamoTech/PolicyForge?style=flat-square&color=teal" alt="Contributors"/></a>
   <a href="https://github.com/SamoTech/PolicyForge/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT License"/></a>
-  <img src="https://img.shields.io/badge/policies-43%2B-brightgreen?style=flat-square" alt="43 Policies"/>
+  <img src="https://img.shields.io/badge/policies-110%2B-brightgreen?style=flat-square" alt="110+ Policies"/>
   <img src="https://img.shields.io/badge/status-active-success?style=flat-square" alt="Active"/>
   <img src="https://img.shields.io/badge/MITRE%20ATT%26CK-mapped-red?style=flat-square" alt="MITRE"/>
   <img src="https://img.shields.io/badge/schema-v1.0-purple?style=flat-square" alt="Schema v1.0"/>
@@ -38,7 +38,7 @@ PolicyForge is an open-source intelligence platform for **Microsoft Group Policy
 
 | Feature | Status |
 |---|---|
-| 43 policies indexed with context, impact & use cases | ✅ Live |
+| 110+ policies indexed with context, impact & use cases | ✅ Live |
 | MITRE ATT&CK mapping for every security policy | ✅ Live |
 | 50 GPO → Intune OMA-URI translations | ✅ Live |
 | Registry ↔ PowerShell reference | ✅ Live |
@@ -66,7 +66,7 @@ PolicyForge is an open-source intelligence platform for **Microsoft Group Policy
    └── ADMX parser engine (automation/admx-parser/)
 
 ✅ Phase 2 — Scale (Complete)
-   ├── 43 policies across Windows Security, Privacy, Defender, Edge, Office
+   ├── 110+ policies across Windows Security, Privacy, Defender, Edge, Office
    ├── 50 GPO → Intune OMA-URI translation mappings
    ├── PowerShell translation engine (GPO → Intune CSV export)
    ├── Policy Diff Tracker (automation/policy-diff/)
