@@ -23,10 +23,9 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
   const [selected, setSelected] = useState<Policy | null>(null);
   const [theme, setTheme]       = useState<'light' | 'dark'>('light');
   const [viewMode, setView]     = useState<'grid' | 'list'>('grid');
-  const [navOpen, setNavOpen]   = useState(true);
+  const [navOpen, setNavOpen]   = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // Derive categories dynamically from loaded policies
   const allCategories = useMemo(() => {
     const set = new Set<string>();
     policies.forEach((p) => {
@@ -44,6 +43,15 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 769px)');
+    const syncNav = (matches: boolean) => setNavOpen(matches);
+    syncNav(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => syncNav(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -103,9 +111,8 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
   const hasFilters = query || riskFilter.length > 0 || catFilter.length > 0;
 
   return (
-    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', position: 'relative' }}>
 
-      {/* ── TOP BAR ── */}
       <header style={{
         height: 'var(--header-h)',
         background: 'var(--primary)',
@@ -115,10 +122,10 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
         position: 'sticky', top: 0, zIndex: 50,
         boxShadow: 'var(--shadow-4)',
       }}>
-        {/* Hamburger */}
         <button
           onClick={() => setNavOpen((o) => !o)}
           aria-label="Toggle navigation"
+          aria-expanded={navOpen}
           style={{ color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-sm)', flexShrink: 0 }}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
@@ -126,7 +133,6 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
           </svg>
         </button>
 
-        {/* Logo + wordmark */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
             <rect width="10" height="10" fill="#f25022"/>
@@ -139,10 +145,8 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
           </span>
         </div>
 
-        {/* Divider */}
         <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,.3)', flexShrink: 0 }} />
 
-        {/* Search */}
         <div style={{ flex: '1 1 400px', maxWidth: 560, position: 'relative' }}>
           <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,.7)', pointerEvents: 'none' }}
             width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -174,7 +178,6 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
         </div>
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          {/* View toggle */}
           <div style={{ display: 'flex', background: 'rgba(255,255,255,.15)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
             {(['grid', 'list'] as const).map((m) => (
               <button key={m} onClick={() => setView(m)} aria-pressed={viewMode === m}
@@ -193,7 +196,6 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
             ))}
           </div>
 
-          {/* Theme toggle */}
           <button onClick={() => setTheme((t) => t === 'dark' ? 'light' : 'dark')}
             aria-label="Toggle theme"
             style={{ color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 'var(--radius-sm)' }}>
@@ -205,7 +207,6 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
         </div>
       </header>
 
-      {/* ── STATS BAR ── */}
       <div style={{
         background: 'var(--surface)',
         borderBottom: '1px solid var(--border)',
@@ -231,20 +232,36 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
         )}
       </div>
 
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+      {navOpen && (
+        <button
+          aria-label="Close navigation overlay"
+          onClick={() => setNavOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,.35)',
+            zIndex: 39,
+            border: 'none',
+            display: typeof window !== 'undefined' && window.innerWidth <= 768 ? 'block' : 'none',
+          }}
+        />
+      )}
 
-        {/* ── LEFT NAV ── */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {navOpen && (
           <nav style={{
             width: 'var(--nav-width)', flexShrink: 0,
             background: 'var(--surface)',
             borderRight: '1px solid var(--border)',
             padding: 'var(--space-4) 0',
-            position: 'sticky',
+            position: typeof window !== 'undefined' && window.innerWidth <= 768 ? 'fixed' : 'sticky',
+            left: 0,
             top: 'calc(var(--header-h) + 40px)',
             height: 'calc(100dvh - var(--header-h) - 40px)',
             overflowY: 'auto',
             display: 'flex', flexDirection: 'column', gap: 'var(--space-4)',
+            zIndex: 40,
+            boxShadow: 'var(--shadow-3)',
           }}>
             <NavSection label="Risk Level">
               {RISK_LEVELS.map((r) => (
@@ -291,10 +308,7 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
           </nav>
         )}
 
-        {/* ── MAIN CONTENT ── */}
         <main style={{ flex: 1, padding: 'var(--space-5) var(--space-6)', overflowX: 'hidden', minWidth: 0 }}>
-
-          {/* Result count row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
             <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
               {results.length === policies.length
@@ -346,7 +360,6 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
   );
 }
 
-/* ── Nav helpers ── */
 function NavSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -374,7 +387,6 @@ function NavItem({ label, count, active, onClick, dot }: {
       color: active ? 'var(--primary)' : 'var(--text-muted)',
       fontSize: 'var(--text-sm)',
       fontWeight: active ? 600 : 400,
-      borderLeft: active ? '2px solid var(--primary)' : '2px solid transparent',
       textAlign: 'left',
       textTransform: 'capitalize',
       transition: 'background var(--transition), color var(--transition)',
@@ -386,9 +398,7 @@ function NavItem({ label, count, active, onClick, dot }: {
   );
 }
 
-/* ── List row ── */
 function PolicyListRow({ policy, onOpen }: { policy: Policy; onOpen: () => void }) {
-  const riskBar = `var(--risk-${policy.risk_level.toLowerCase()}-bar, var(--primary))`;
   const cats = Array.isArray(policy.category) ? policy.category : [policy.category];
   return (
     <button onClick={onOpen} style={{
@@ -396,14 +406,21 @@ function PolicyListRow({ policy, onOpen }: { policy: Policy; onOpen: () => void 
       padding: 'var(--space-3) var(--space-4)',
       background: 'var(--surface-card)',
       border: '1px solid var(--border)',
-      borderLeft: `3px solid ${riskBar}`,
       borderRadius: 'var(--radius-md)',
       textAlign: 'left',
-      transition: 'box-shadow var(--transition), background var(--transition)',
+      transition: 'box-shadow var(--transition), background var(--transition), border-color var(--transition)',
       cursor: 'pointer',
     }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-4)'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.boxShadow = 'var(--shadow-4)';
+        el.style.borderColor = 'var(--border-hover)';
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.boxShadow = 'none';
+        el.style.borderColor = 'var(--border)';
+      }}
     >
       <code style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', color: 'var(--primary)', fontWeight: 600, flexShrink: 0, minWidth: 140 }}>{policy.id}</code>
       <span style={{ flex: 1, fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{policy.name}</span>

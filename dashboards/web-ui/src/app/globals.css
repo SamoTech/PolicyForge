@@ -122,6 +122,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
 ::selection { background: rgba(0,120,212,.25); }
 
 :focus-visible {
@@ -150,6 +156,12 @@ pre {
 
 [data-theme='light'] pre {
   background: rgba(0,0,0,.04);
+}
+
+@media (max-width: 768px) {
+  :root {
+    --nav-width: min(280px, 82vw);
+  }
 }
 
 @keyframes fadeUp {
