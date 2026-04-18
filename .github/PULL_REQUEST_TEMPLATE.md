@@ -1,36 +1,52 @@
-## Description
+## 📋 Pull Request Summary
 
-<!-- Summarize the change. Include the policy IDs affected. -->
+<!-- Briefly describe what this PR does -->
 
-## Type of Change
+## 🏷️ Team Routing
 
-- [ ] New policy document
-- [ ] Policy correction (wrong value / path / OMA-URI)
-- [ ] Script fix (PowerShell / Python)
-- [ ] Documentation update
-- [ ] New template
-- [ ] CI/CD / tooling change
+<!-- Check the team(s) this PR belongs to -->
+- [ ] 🔐 `team: security` — Policy content (`/policies/`)
+- [ ] 📊 `team: compliance` — Compliance metadata / framework mapping
+- [ ] 💻 `team: frontend` — Dashboard / Web UI (`/dashboards/`)
+- [ ] ⚙️ `team: devops` — Automation, CI/CD (`/automation/`, `/.github/workflows/`)
+- [ ] 🌍 `team: l10n` — Translations (`/translations/`)
+- [ ] 📝 `team: docs` — Documentation (`*.md`, `/templates/`)
+- [ ] 🎨 `team: design` — UI/UX changes
 
-## Policy Accuracy Checklist
+## 🔄 Type of Change
 
-- [ ] Registry path verified against official Microsoft documentation or CIS/DISA source
-- [ ] Expected value verified (correct data type: DWord / String / ExpandString)
-- [ ] Policy ID matches canonical mapping in `policies/windows/README.md`
-- [ ] OMA-URI / CSP path tested or cross-referenced with Microsoft Intune documentation
-- [ ] MITRE ATT&CK technique reference included (where applicable)
+- [ ] 🆕 New policy
+- [ ] ✏️ Policy update
+- [ ] 🐛 Bug fix
+- [ ] ✨ Enhancement
+- [ ] 📖 Documentation
+- [ ] 🌍 Translation
+- [ ] ⚙️ Automation / CI
 
-## Schema Compliance
+## 🔐 For Policy PRs
 
-- [ ] New policy documents include YAML frontmatter (`id`, `title`, `category`, `risk`, `mitre`)
-- [ ] Document sections follow `_TEMPLATE.md` structure
-- [ ] No new IDs conflict with existing policy IDs in `policies/windows/README.md`
+<!-- Fill in if this PR adds or modifies a policy -->
 
-## Testing
+| Field | Value |
+|---|---|
+| Policy ID | `e.g. WIN-001` |
+| Category | `e.g. BitLocker` |
+| Risk Level | `🔴 Critical / 🟠 High / 🟡 Medium / 🟢 Low` |
+| MITRE ATT&CK | `e.g. T1078, T1110` |
+| Compliance | `e.g. CIS L1, NIST AC-2` |
+| Tested on | `e.g. Windows 11 22H2, Server 2022` |
 
-- [ ] PowerShell scripts validated for syntax (`Test-Path` not assumed)
-- [ ] Tested on at least one target Windows version (state which)
-- [ ] `verify.ps1` run after any registry-touching changes
+## ✅ Checklist
 
-## References
+- [ ] Follows the policy schema (`POLICY_SCHEMA.json`)
+- [ ] Registry path verified and accurate
+- [ ] PowerShell script tested locally
+- [ ] OMA-URI validated (if applicable)
+- [ ] Compliance references are correct
+- [ ] No breaking changes to existing policies
+- [ ] CHANGELOG.md updated (for significant changes)
+- [ ] Related issues linked below
 
-<!-- Links to CIS Benchmark, DISA STIG, Microsoft Docs, or other authoritative sources used. -->
+## 🔗 Related Issues
+
+Closes #

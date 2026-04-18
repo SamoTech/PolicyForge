@@ -1,0 +1,31 @@
+name: 🌍 Translation Request
+description: Request a new language or report a translation issue
+labels: ["type: translation", "team: l10n", "status: needs-review"]
+assignees: ["SamoTech"]
+body:
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      placeholder: e.g. Arabic (ar), French (fr), German (de)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: request-type
+    attributes:
+      label: Request Type
+      options:
+        - New language
+        - Fix existing translation
+        - Update outdated translation
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Which policies / sections need translation or fixing?
+    validations:
+      required: true

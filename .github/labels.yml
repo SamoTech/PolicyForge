@@ -1,0 +1,136 @@
+# PolicyForge Label Definitions
+# Apply with: gh label create --from-file .github/labels.yml
+# Or use the GitHub CLI: gh label import SamoTech/PolicyForge .github/labels.yml
+
+# ── Team Labels ───────────────────────────────────────────────────────────────
+- name: "team: security"
+  color: "b60205"
+  description: "Owned by Windows Security Engineers"
+
+- name: "team: compliance"
+  color: "e4e669"
+  description: "Owned by Compliance Analyst"
+
+- name: "team: frontend"
+  color: "0075ca"
+  description: "Owned by Frontend Developer"
+
+- name: "team: devops"
+  color: "e99695"
+  description: "Owned by DevOps / Automation Engineer"
+
+- name: "team: l10n"
+  color: "c5def5"
+  description: "Owned by Technical Translators (Localization)"
+
+- name: "team: docs"
+  color: "bfd4f2"
+  description: "Owned by Technical Writer"
+
+- name: "team: design"
+  color: "d93f0b"
+  description: "Owned by UI/UX Designer"
+
+# ── Priority Labels ───────────────────────────────────────────────────────────
+- name: "priority: critical"
+  color: "b60205"
+  description: "Must be fixed immediately"
+
+- name: "priority: high"
+  color: "e4e669"
+  description: "Important, address soon"
+
+- name: "priority: medium"
+  color: "0075ca"
+  description: "Normal priority"
+
+- name: "priority: low"
+  color: "cfd3d7"
+  description: "Nice to have"
+
+# ── Type Labels ───────────────────────────────────────────────────────────────
+- name: "type: new-policy"
+  color: "0e8a16"
+  description: "Adds a new security policy"
+
+- name: "type: policy-update"
+  color: "fbca04"
+  description: "Updates an existing policy"
+
+- name: "type: bug"
+  color: "d73a4a"
+  description: "Something isn't working"
+
+- name: "type: enhancement"
+  color: "a2eeef"
+  description: "Improvement to existing feature"
+
+- name: "type: dashboard"
+  color: "0075ca"
+  description: "Related to the web dashboard"
+
+- name: "type: automation"
+  color: "e99695"
+  description: "Related to scripts / CI workflows"
+
+- name: "type: translation"
+  color: "c5def5"
+  description: "Related to localization / translations"
+
+- name: "type: docs"
+  color: "bfd4f2"
+  description: "Documentation only changes"
+
+- name: "type: security"
+  color: "b60205"
+  description: "Security vulnerability or hardening"
+
+# ── Status Labels ─────────────────────────────────────────────────────────────
+- name: "status: needs-review"
+  color: "fbca04"
+  description: "Waiting for review"
+
+- name: "status: in-progress"
+  color: "0075ca"
+  description: "Actively being worked on"
+
+- name: "status: blocked"
+  color: "b60205"
+  description: "Blocked by something external"
+
+- name: "status: ready-to-merge"
+  color: "0e8a16"
+  description: "Approved and ready to merge"
+
+- name: "status: stale"
+  color: "cfd3d7"
+  description: "No activity in 30+ days"
+
+# ── Scope Labels ─────────────────────────────────────────────────────────────
+- name: "scope: windows"
+  color: "0078d4"
+  description: "Windows security policies"
+
+- name: "scope: edge"
+  color: "0078d4"
+  description: "Microsoft Edge policies"
+
+- name: "scope: defender"
+  color: "b60205"
+  description: "Microsoft Defender policies"
+
+- name: "scope: office"
+  color: "d83b01"
+  description: "Microsoft Office policies"
+
+- name: "scope: server"
+  color: "5319e7"
+  description: "Windows Server policies"
+
+- name: "good first issue"
+  color: "7057ff"
+  description: "Good for newcomers"
+
+- name: "help wanted"
+  color: "008672"
+  description: "Extra attention is needed"

@@ -1,0 +1,37 @@
+# PolicyForge CODEOWNERS
+# Automatically requests reviews from the right person per folder.
+# Syntax: <pattern> <@owner> ...
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# ── Default: Project Lead reviews everything ──────────────────────────────────
+*                               @SamoTech
+
+# ── Policy content (Security Engineers + Compliance Analyst) ──────────────────
+/policies/                      @SamoTech
+/policies/windows/              @SamoTech
+/policies/defender/             @SamoTech
+/policies/edge/                 @SamoTech
+/policies/office/               @SamoTech
+/policies/server/               @SamoTech
+
+# ── Dashboard / Web UI (Frontend Developer) ───────────────────────────────────
+/dashboards/                    @SamoTech
+/dashboards/web-ui/             @SamoTech
+
+# ── Automation & CI/CD (DevOps Engineer) ─────────────────────────────────────
+/automation/                    @SamoTech
+/.github/workflows/             @SamoTech
+/.github/scripts/               @SamoTech
+
+# ── Translations (Technical Translators) ─────────────────────────────────────
+/translations/                  @SamoTech
+
+# ── Templates & Docs (Technical Writer) ──────────────────────────────────────
+/templates/                     @SamoTech
+*.md                            @SamoTech
+README.md                       @SamoTech
+CONTRIBUTING.md                 @SamoTech
+CHANGELOG.md                    @SamoTech
+
+# ── Schema & Config (Project Lead) ───────────────────────────────────────────
+POLICY_SCHEMA.json              @SamoTech

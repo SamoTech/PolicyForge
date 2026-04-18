@@ -1,0 +1,24 @@
+name: 📝 Documentation Improvement
+description: Suggest an improvement to PolicyForge docs
+labels: ["type: docs", "team: docs"]
+assignees: ["SamoTech"]
+body:
+  - type: input
+    id: file
+    attributes:
+      label: File / Section
+      placeholder: e.g. README.md, CONTRIBUTING.md, templates/
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What needs to be improved?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement

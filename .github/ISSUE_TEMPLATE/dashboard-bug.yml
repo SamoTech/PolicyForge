@@ -1,0 +1,49 @@
+name: 💻 Dashboard Bug
+description: Report a bug in the PolicyForge web dashboard
+labels: ["type: bug", "team: frontend", "status: needs-review"]
+assignees: ["SamoTech"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting! Please provide as much detail as possible.
+
+  - type: input
+    id: url
+    attributes:
+      label: Dashboard URL / Page
+      placeholder: e.g. /policies or /policies/WIN-001
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: What happened? What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click on ...
+        3. See error
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser & OS
+      placeholder: e.g. Chrome 124 on Windows 11
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "🔴 Critical (site broken)"
+        - "🟠 High"
+        - "🟡 Medium"
+        - "🟢 Low"

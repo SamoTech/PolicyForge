@@ -1,0 +1,89 @@
+name: 🔐 New Policy Request
+description: Request a new Windows/Defender/Edge/Office security policy
+labels: ["type: new-policy", "team: security", "status: needs-review"]
+assignees: ["SamoTech"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing to PolicyForge! Fill in as much detail as possible.
+
+  - type: input
+    id: policy-name
+    attributes:
+      label: Policy Name
+      placeholder: e.g. Disable SMB v1
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Account Policies
+        - AppLocker
+        - Attack Surface Reduction
+        - Audit Policy
+        - BitLocker
+        - Credential Protection
+        - Microsoft Defender
+        - Windows Firewall
+        - Local Security Options
+        - Network Security
+        - Print Security
+        - Privacy
+        - Security Settings
+        - SMB Security
+        - Windows Update
+        - User Rights Assignment
+        - WDAC
+        - Microsoft Edge
+        - Microsoft Office
+        - Windows Server
+    validations:
+      required: true
+
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk Level
+      options:
+        - "🔴 Critical"
+        - "🟠 High"
+        - "🟡 Medium"
+        - "🟢 Low"
+    validations:
+      required: true
+
+  - type: input
+    id: mitre
+    attributes:
+      label: MITRE ATT&CK Techniques
+      placeholder: e.g. T1078, T1110.001
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What does this policy do and why is it important?
+    validations:
+      required: true
+
+  - type: input
+    id: registry
+    attributes:
+      label: Registry Path
+      placeholder: e.g. HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters
+
+  - type: textarea
+    id: compliance
+    attributes:
+      label: Compliance References
+      placeholder: e.g. CIS L1, NIST AC-3, DISA STIG
+
+  - type: input
+    id: tested-on
+    attributes:
+      label: Tested On
+      placeholder: e.g. Windows 11 23H2, Server 2022
