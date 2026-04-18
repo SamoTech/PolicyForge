@@ -16,23 +16,23 @@ const TOP_CAT: Record<string, string> = {
 };
 
 const SUB_CAT: Record<string, string> = {
-  'account-policies':       'Windows Security',
-  'applocker':              'Windows Security',
-  'asr':                    'Microsoft Defender',
-  'audit':                  'Windows Security',
-  'bitlocker':              'Windows Security',
-  'credentials':            'Windows Security',
+  'account-policies':       'Account Policies',
+  'applocker':              'AppLocker',
+  'asr':                    'Attack Surface Reduction',
+  'audit':                  'Audit Policy',
+  'bitlocker':              'BitLocker',
+  'credentials':            'Credential Protection',
   'defender':               'Microsoft Defender',
   'firewall':               'Windows Firewall',
-  'local-security-options': 'Windows Security',
-  'network':                'Windows Network',
-  'printing':               'Windows Security',
-  'privacy':                'Windows Privacy',
-  'security':               'Windows Security',
-  'smb':                    'Windows Security',
-  'update':                 'Windows Security',
-  'user-rights':            'Windows Security',
-  'wdac':                   'Windows Security',
+  'local-security-options': 'Local Security Options',
+  'network':                'Network Security',
+  'printing':               'Print Security',
+  'privacy':                'Privacy',
+  'security':               'Security Settings',
+  'smb':                    'SMB Security',
+  'update':                 'Windows Update',
+  'user-rights':            'User Rights Assignment',
+  'wdac':                   'WDAC',
 };
 
 const RISK_EMOJI: Record<string, RiskLevel> = {
