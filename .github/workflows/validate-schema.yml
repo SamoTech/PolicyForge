@@ -5,10 +5,12 @@ on:
     paths:
       - 'policies/**/*.md'
       - 'POLICY_SCHEMA.json'
+      - '.github/scripts/**'
   push:
     branches: [ main ]
     paths:
       - 'policies/**/*.md'
+      - '.github/scripts/**'
 
 jobs:
   validate-policies:

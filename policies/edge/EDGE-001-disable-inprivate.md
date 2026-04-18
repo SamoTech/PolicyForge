@@ -1,86 +1,73 @@
----
-id: EDGE-001
-name: Disable InPrivate Browsing in Microsoft Edge
-category: [Edge, Compliance, Data Leakage Prevention]
-risk_level: Medium
-risk_emoji: 🟠
-applies_to: [Windows 10, Windows 11, Microsoft Edge 77+]
-test_status: "✅ Tested on Edge 124, Windows 10 22H2, Windows 11 24H2"
----
+# EDGE-001 — Disable InPrivate Browsing
 
-# Disable InPrivate Browsing in Microsoft Edge
+**ID:** EDGE-001  
+**Category:** Microsoft Edge / Privacy Controls  
+**Risk Level:** 🟠 Medium  
+**OS:** Windows 10+, Windows 11  
+**Source:** CIS Benchmark Edge v3.0 · Microsoft Security Baseline
 
-> 🟠 **Risk Level: Medium** — InPrivate mode bypasses browser history, leaving no local forensic trail. In managed environments, it can be used to evade web filtering and DLP logging.
+---
 
 ## Policy Path
 
-```
-Computer Configuration
-  └── Administrative Templates
-        └── Microsoft Edge
-              └── InPrivate mode availability → InPrivate mode disabled (value: 2)
-```
+`Computer Configuration > Administrative Templates > Microsoft Edge > InPrivate mode availability`
 
 ## Registry
 
-| Key | Value | Data | Type |
-|---|---|---|---|
-| `HKLM\SOFTWARE\Policies\Microsoft\Edge` | `InPrivateModeAvailability` | `2` | REG_DWORD |
-
-**Values:** `0` = Available (default), `1` = Forced, `2` = **Disabled** ✅
-
-## Description
-
-InPrivate browsing disables local history, cookies, and cache storage for the session. In enterprise environments with web content filtering and DLP solutions, InPrivate mode can allow users to access policy-blocked sites or download restricted content without generating browser history logs. Disabling it ensures all browsing activity is captured by monitoring solutions and proxy logs.
+```
+HKLM\SOFTWARE\Policies\Microsoft\Edge
+  InPrivateModeAvailability = 1
+  (0 = available, 1 = disabled, 2 = forced)
+```
 
 ## PowerShell
 
 ```powershell
+# Disable InPrivate browsing
 $path = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"
-If (-not (Test-Path $path)) { New-Item -Path $path -Force | Out-Null }
-Set-ItemProperty -Path $path -Name "InPrivateModeAvailability" -Value 2 -Type DWord
+if (-not (Test-Path $path)) { New-Item -Path $path -Force }
+Set-ItemProperty -Path $path -Name "InPrivateModeAvailability" -Value 1 -Type DWord -Force
 
 # Verify
-Get-ItemProperty -Path $path -Name "InPrivateModeAvailability"
+Get-ItemProperty $path | Select InPrivateModeAvailability
 ```
 
-## Intune CSP
+## Description
 
-| Setting | Value |
-|---|---|
-| OMA-URI | `./Device/Vendor/MSFT/Policy/Config/Browser/AllowInPrivate` |
-| Data Type | Integer |
-| Value | `0` (Block) |
+Disables InPrivate browsing mode in Microsoft Edge. InPrivate mode bypasses browser history, cookies, and caching, which can be exploited to evade DLP controls, conduct unauthorized research, or exfiltrate data without leaving local traces.
 
 ## Impact
 
-- ✅ All browsing activity captured in proxy and monitoring logs
-- ✅ Web filtering policies apply consistently across all sessions
-- ✅ DLP solutions see full browser activity
-- ⚠️ Legitimate privacy-conscious users lose session isolation capability
-- ℹ️ Does not affect other browsers installed on the device (Chrome, Firefox)
+Users will be unable to open InPrivate windows. All browsing sessions will be recorded in the browser history and subject to corporate monitoring and DLP policies. This may affect legitimate privacy use cases but is appropriate in regulated or high-security environments.
 
 ## Use Cases
 
-- **Regulated industries** — ensure all web activity is auditable (finance, healthcare, legal)
-- **DLP enforcement** — prevent bypassing content inspection via InPrivate sessions
-- **Kiosk / shared devices** — prevent users leaving persistent sessions while still logging activity
-- **Insider threat programs** — maintain full web audit trail for high-risk users
-- **CIS compliance** — required for Level 2 managed browser deployments
+- Prevent users from bypassing web content filters via InPrivate sessions
+- Enforce DLP policy coverage across all browsing activity
+- Support compliance in environments subject to HIPAA, PCI-DSS, or GDPR audit requirements
+- Reduce risk of data exfiltration via unmonitored browser sessions
 
-## MITRE ATT&CK Mapping
+## MITRE ATT&CK
 
-| Technique | Description |
+- **T1048** — Exfiltration Over Alternative Protocol
+- **T1567** — Exfiltration Over Web Service
+
+## Intune CSP
+
+`./Device/Vendor/MSFT/Policy/Config/Browser/AllowInPrivate`  
+Value: `0` (block)
+
+## References
+
+- [CIS Microsoft Edge Benchmark v3.0](https://www.cisecurity.org/benchmark/microsoft_edge)
+- [Microsoft Edge security baseline](https://learn.microsoft.com/en-us/deployedge/microsoft-edge-security-baseline)
+- [InPrivateModeAvailability policy](https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies#inprivatemodeavailability)
+
+## Metadata
+
+| Field | Value |
 |---|---|
-| [T1564.003](https://attack.mitre.org/techniques/T1564/003/) | Hide Artifacts: Hidden Window (evading browser logging) |
-| [T1048](https://attack.mitre.org/techniques/T1048/) | Exfiltration Over Alternative Protocol |
-
-## Compliance References
-
-- **CIS Microsoft Edge Benchmark**: Level 2, Control 2.1
-- **NIST SP 800-53**: AU-12 (Audit Record Generation)
-- **ISO 27001**: A.12.4 (Logging and Monitoring)
-
-## Test Status
-
-✅ Tested on Microsoft Edge 124, Windows 10 22H2, Windows 11 24H2
+| Version | 1.1 |
+| Last Updated | 2026-04-18 |
+| Author | PolicyForge |
+| Status | Active |
