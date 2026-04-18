@@ -13,10 +13,11 @@
   <a href="https://github.com/SamoTech/PolicyForge/stargazers"><img src="https://img.shields.io/github/stars/SamoTech/PolicyForge?style=flat-square&color=gold" alt="Stars"/></a>
   <a href="https://github.com/SamoTech/PolicyForge/graphs/contributors"><img src="https://img.shields.io/github/contributors/SamoTech/PolicyForge?style=flat-square&color=teal" alt="Contributors"/></a>
   <a href="https://github.com/SamoTech/PolicyForge/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT License"/></a>
-  <img src="https://img.shields.io/badge/policies-110%2B-brightgreen?style=flat-square" alt="110+ Policies"/>
+  <img src="https://img.shields.io/badge/policies-27-brightgreen?style=flat-square" alt="27 Policies"/>
   <img src="https://img.shields.io/badge/status-active-success?style=flat-square" alt="Active"/>
   <img src="https://img.shields.io/badge/MITRE%20ATT%26CK-mapped-red?style=flat-square" alt="MITRE"/>
   <img src="https://img.shields.io/badge/schema-v1.0-purple?style=flat-square" alt="Schema v1.0"/>
+  <a href="https://ms-gpo.vercel.app"><img src="https://img.shields.io/badge/Web%20UI-live-brightgreen?style=flat-square" alt="Web UI Live"/></a>
 </p>
 
 ---
@@ -32,15 +33,17 @@ PolicyForge is an open-source intelligence platform for **Microsoft Group Policy
 
 **PolicyForge is not documentation. It is infrastructure for IT decision-making.**
 
+> 🌐 **Live Web UI:** [ms-gpo.vercel.app](https://ms-gpo.vercel.app) — Search policies, filter by risk level & category, view MITRE ATT&CK mappings, registry paths, PowerShell commands, and Intune OMA-URIs in one place.
+
 ---
 
 ## 🔥 Features
 
 | Feature | Status |
 |---|---|
-| 110+ policies indexed with context, impact & use cases | ✅ Live |
+| 27 policies indexed with context, impact & use cases | ✅ Live |
 | MITRE ATT&CK mapping for every security policy | ✅ Live |
-| 50 GPO → Intune OMA-URI translations | ✅ Live |
+| GPO → Intune OMA-URI translations | ✅ Live |
 | Registry ↔ PowerShell reference | ✅ Live |
 | ADMX auto-parser (batch-generates Markdown) | ✅ Live |
 | Policy Diff Tracker (Windows 10 vs 11 vs Server) | ✅ Live |
@@ -51,7 +54,7 @@ PolicyForge is an open-source intelligence platform for **Microsoft Group Policy
 | Red team evasion research (MITRE-mapped) | ✅ Live |
 | Microsoft Edge security policies (EDGE-001→005) | ✅ Live |
 | Microsoft Office macro security policies (OFFICE-001→005) | ✅ Live |
-| Web UI policy search dashboard | 🔜 Phase 3 |
+| **Web UI policy search dashboard** | ✅ **Live — [ms-gpo.vercel.app](https://ms-gpo.vercel.app)** |
 | AI policy recommendation engine | 🔜 Phase 4 |
 
 ---
@@ -66,19 +69,20 @@ PolicyForge is an open-source intelligence platform for **Microsoft Group Policy
    └── ADMX parser engine (automation/admx-parser/)
 
 ✅ Phase 2 — Scale (Complete)
-   ├── 110+ policies across Windows Security, Privacy, Defender, Edge, Office
-   ├── 50 GPO → Intune OMA-URI translation mappings
+   ├── 27 policies across Windows Security, Privacy, Defender, Edge, Office
+   ├── GPO → Intune OMA-URI translation mappings
    ├── PowerShell translation engine (GPO → Intune CSV export)
    ├── Policy Diff Tracker (automation/policy-diff/)
    ├── Registry ↔ PowerShell bulk reference
    ├── Templates: Enterprise Hardening, Gaming, Kiosk, Red Team
    └── Post-deployment verification scripts
 
-🔜 Phase 3 — Web UI (Q3 2026)
-   ├── Next.js search dashboard
-   ├── Filter by: OS version, risk level, use case, compliance
-   ├── Policy conflict detector
-   └── Live ADMX diff feed (auto-updates with Windows releases)
+✅ Phase 3 — Web UI (Complete)
+   ├── Next.js search dashboard → https://ms-gpo.vercel.app
+   ├── Filter by: category (Defender, Edge, Office, Network, Privacy, Security)
+   ├── Filter by: risk level (Critical, High, Medium, Low)
+   ├── Real-time search across policies, registry, MITRE, OMA-URI
+   └── Policy cards with MITRE ATT&CK tags, risk badges, category labels
 
 🔜 Phase 4 — AI Layer (Q4 2026)
    ├── Natural language policy query: "Harden 50 SMB endpoints"
@@ -117,7 +121,7 @@ PolicyForge/
 │   └── redteam-evasion/      # Offensive research (authorized use)
 │
 ├── 📁 translations/
-│   ├── gpo-to-intune/        # 50 GPO → OMA-URI mappings + PS engine
+│   ├── gpo-to-intune/        # GPO → OMA-URI mappings + PS engine
 │   └── registry-mapping/     # Registry ↔ PowerShell reference
 │
 ├── 📁 automation/
@@ -125,7 +129,7 @@ PolicyForge/
 │   └── policy-diff/          # Windows version diff tracker
 │
 ├── 📁 dashboards/
-│   └── web-ui/               # Phase 3 — Next.js
+│   └── web-ui/               # Phase 3 — Next.js (Live: ms-gpo.vercel.app)
 │
 ├── README.md
 ├── CONTRIBUTING.md
@@ -164,12 +168,17 @@ PolicyForge/
 | Find policies deprecated in Windows 11 | `automation/policy-diff/policy_diff.py` |
 | Optimize a gaming PC via GPO | `templates/gaming-optimization/` |
 | Validate hardening post-deployment | `templates/enterprise-hardening/verify.ps1` |
+| **Search & explore all policies visually** | **[ms-gpo.vercel.app](https://ms-gpo.vercel.app)** |
 
 ---
 
 ## ⚡ Quick Start
 
-### Explore a Policy
+### Explore Policies via Web UI
+
+Visit **[ms-gpo.vercel.app](https://ms-gpo.vercel.app)** to search all policies by name, registry path, MITRE technique, or OMA-URI. Filter by category and risk level instantly — no setup required.
+
+### Explore a Policy (CLI)
 
 ```bash
 # Browse policies by category
@@ -232,5 +241,6 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 <p align="center">
   Made with ❤️ by the PolicyForge community<br/>
+  <a href="https://ms-gpo.vercel.app">🌐 Try the Live Web UI</a> &nbsp;·&nbsp;
   <a href="https://github.com/SamoTech/PolicyForge">⭐ Star this repo if it helps you</a>
 </p>
