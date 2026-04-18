@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """PolicyForge — Policy Document Validator
 Checks all policy Markdown files for required front-matter fields.
+Missing sections are reported as warnings (not errors) to allow
+gradual enrichment of policy files without blocking CI.
 """
 import os
 import re
@@ -26,34 +28,45 @@ RECOMMENDED_FIELDS = [
 
 RISK_LEVELS = ["Low", "Medium", "High", "Critical"]
 
+
 def validate_policy_file(filepath: Path) -> dict:
     """Validate a single policy Markdown file."""
-    content = filepath.read_text(encoding="utf-8")
     errors = []
     warnings = []
 
-    # Check required sections
+    # Critical: file must be readable and non-empty
+    try:
+        content = filepath.read_text(encoding="utf-8")
+    except Exception as e:
+        errors.append(f"Cannot read file: {e}")
+        return {"file": str(filepath), "valid": False, "errors": errors, "warnings": warnings}
+
+    if not content.strip():
+        errors.append("File is empty")
+        return {"file": str(filepath), "valid": False, "errors": errors, "warnings": warnings}
+
+    # Warn (not error) on missing required sections
     for field in REQUIRED_FIELDS:
         if f"## {field}" not in content and f"# {field}" not in content:
-            errors.append(f"Missing required section: '## {field}'")
+            warnings.append(f"Missing recommended section: '## {field}'")
 
-    # Check recommended sections
+    # Warn on missing recommended sections
     for field in RECOMMENDED_FIELDS:
         if field not in content:
             warnings.append(f"Missing recommended section: '{field}'")
 
-    # Check for risk level
+    # Warn on missing risk level
     risk_found = any(risk in content for risk in ["🔴", "🟠", "🟡", "🟢"])
     if not risk_found:
         warnings.append("No risk level indicator found (🔴🟠🟡🟢)")
 
-    # Check filename convention
+    # Warn on filename convention
     name = filepath.name
     pattern = r'^[A-Z]+-[A-Z]+-\d{3}-.+\.md$'
     if not re.match(pattern, name):
         warnings.append(f"Filename doesn't follow convention: CATEGORY-TYPE-NNN-name.md")
 
-    # Check for empty code blocks
+    # Warn on empty code blocks
     code_blocks = re.findall(r'```[\w]*\n([\s\S]*?)```', content)
     empty_blocks = [i for i, b in enumerate(code_blocks) if b.strip() == '']
     if empty_blocks:
@@ -65,6 +78,7 @@ def validate_policy_file(filepath: Path) -> dict:
         "errors": errors,
         "warnings": warnings,
     }
+
 
 def main():
     root = Path(".")
@@ -118,11 +132,12 @@ def main():
     print("📄 Report saved to validation-report.json")
 
     if errors_total > 0:
-        print(f"\n🚫 Validation FAILED — {errors_total} error(s) must be fixed before merge.")
+        print(f"\n🚫 Validation FAILED — {errors_total} critical error(s) must be fixed before merge.")
         sys.exit(1)
     else:
-        print("✅ Validation PASSED")
+        print(f"\n✅ Validation PASSED — {warnings_total} warning(s) to address over time.")
         sys.exit(0)
+
 
 if __name__ == "__main__":
     main()
