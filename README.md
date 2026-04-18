@@ -13,7 +13,7 @@
   <a href="https://github.com/SamoTech/PolicyForge/stargazers"><img src="https://img.shields.io/github/stars/SamoTech/PolicyForge?style=flat-square&color=gold" alt="Stars"/></a>
   <a href="https://github.com/SamoTech/PolicyForge/graphs/contributors"><img src="https://img.shields.io/github/contributors/SamoTech/PolicyForge?style=flat-square&color=teal" alt="Contributors"/></a>
   <a href="https://github.com/SamoTech/PolicyForge/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT License"/></a>
-  <img src="https://img.shields.io/badge/policies-27-brightgreen?style=flat-square" alt="27 Policies"/>
+  <img src="https://img.shields.io/badge/policies-80%2B-brightgreen?style=flat-square" alt="80+ Policies"/>
   <img src="https://img.shields.io/badge/status-active-success?style=flat-square" alt="Active"/>
   <img src="https://img.shields.io/badge/MITRE%20ATT%26CK-mapped-red?style=flat-square" alt="MITRE"/>
   <img src="https://img.shields.io/badge/schema-v1.0-purple?style=flat-square" alt="Schema v1.0"/>
@@ -41,7 +41,7 @@ PolicyForge is an open-source intelligence platform for **Microsoft Group Policy
 
 | Feature | Status |
 |---|---|
-| 27 policies indexed with context, impact & use cases | ✅ Live |
+| 80+ policies indexed with context, impact & use cases | ✅ Live |
 | MITRE ATT&CK mapping for every security policy | ✅ Live |
 | GPO → Intune OMA-URI translations | ✅ Live |
 | Registry ↔ PowerShell reference | ✅ Live |
@@ -52,7 +52,7 @@ PolicyForge is an open-source intelligence platform for **Microsoft Group Policy
 | Gaming optimization template | ✅ Live |
 | Kiosk / lockdown template | ✅ Live |
 | Red team evasion research (MITRE-mapped) | ✅ Live |
-| Microsoft Edge security policies (EDGE-001→005) | ✅ Live |
+| Microsoft Edge security policies (EDGE-001→013) | ✅ Live |
 | Microsoft Office macro security policies (OFFICE-001→005) | ✅ Live |
 | **Web UI policy search dashboard** | ✅ **Live — [ms-gpo.vercel.app](https://ms-gpo.vercel.app)** |
 | AI policy recommendation engine | 🔜 Phase 4 |
@@ -69,7 +69,7 @@ PolicyForge is an open-source intelligence platform for **Microsoft Group Policy
    └── ADMX parser engine (automation/admx-parser/)
 
 ✅ Phase 2 — Scale (Complete)
-   ├── 27 policies across Windows Security, Privacy, Defender, Edge, Office
+   ├── 80+ policies across Windows Security, Privacy, Defender, Edge, Office, Account Policies
    ├── GPO → Intune OMA-URI translation mappings
    ├── PowerShell translation engine (GPO → Intune CSV export)
    ├── Policy Diff Tracker (automation/policy-diff/)
@@ -105,13 +105,23 @@ PolicyForge is an open-source intelligence platform for **Microsoft Group Policy
 PolicyForge/
 │
 ├── 📁 policies/
-│   ├── windows/security/     # 19 hardening policies (WIN-SECURITY-001→019)
-│   ├── windows/privacy/      # Telemetry, Cortana, OneDrive
-│   ├── windows/network/      # WPAD and network isolation
-│   ├── defender/             # 10 Defender policies (DEF-001→DEF-010)
-│   ├── edge/                 # 5 Edge browser policies (EDGE-001→EDGE-005)
-│   ├── office/               # 5 Office macro policies (OFFICE-001→OFFICE-005)
-│   └── server/               # Windows Server policies (Phase 3)
+│   ├── windows/security/         # 19 hardening policies (WIN-SECURITY-001→019)
+│   ├── windows/privacy/          # 3 privacy policies (WIN-PRIVACY-001→003)
+│   ├── windows/network/          # Network isolation policies
+│   ├── windows/account-policies/ # 13 account policies (ACC-001→013)
+│   ├── windows/applocker/        # AppLocker policies
+│   ├── windows/audit/            # Audit policies
+│   ├── windows/bitlocker/        # BitLocker policies
+│   ├── windows/credentials/      # Credential protection policies
+│   ├── windows/firewall/         # Windows Firewall policies
+│   ├── windows/smb/              # SMB hardening policies
+│   ├── windows/update/           # Windows Update policies
+│   ├── windows/user-rights/      # User Rights Assignment policies
+│   ├── windows/wdac/             # Windows Defender App Control policies
+│   ├── defender/                 # 10 Defender policies (DEF-001→DEF-010)
+│   ├── edge/                     # 13 Edge browser policies (EDGE-001→EDGE-013)
+│   ├── office/                   # 5 Office macro policies (OFFICE-001→OFFICE-005)
+│   └── server/                   # Windows Server policies (Phase 3)
 │
 ├── 📁 templates/
 │   ├── security-baselines/   # Enterprise baseline (CIS L2 / STIG)
@@ -146,12 +156,13 @@ PolicyForge/
 | Category | Count | Directory |
 |---|---|---|
 | Windows Security | 19 | `policies/windows/security/` |
+| Windows Account Policies | 13 | `policies/windows/account-policies/` |
+| Microsoft Edge | 13 | `policies/edge/` |
 | Microsoft Defender | 10 | `policies/defender/` |
 | Microsoft Office | 5 | `policies/office/` |
-| Microsoft Edge | 5 | `policies/edge/` |
 | Windows Privacy | 3 | `policies/windows/privacy/` |
-| Windows Network | 1 | `policies/windows/network/` |
-| **Total** | **43** | |
+| Windows Firewall, SMB, AppLocker, BitLocker, Audit, Update, User Rights, WDAC, Network, Credentials | 10+ | `policies/windows/*/` |
+| **Total** | **80+** | |
 
 ---
 
