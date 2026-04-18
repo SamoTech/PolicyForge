@@ -23,7 +23,9 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
   const [selected, setSelected] = useState<Policy | null>(null);
   const [theme, setTheme]       = useState<'light' | 'dark'>('light');
   const [viewMode, setView]     = useState<'grid' | 'list'>('grid');
+  // navOpen starts false (safe for SSR); useEffect sets real value after mount
   const [navOpen, setNavOpen]   = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const allCategories = useMemo(() => {
@@ -35,6 +37,7 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
     return Array.from(set).sort();
   }, [policies]);
 
+  // Theme — runs only on client
   useEffect(() => {
     const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     setTheme(dark ? 'dark' : 'light');
@@ -44,25 +47,33 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
+  // Nav + mobile breakpoint — single source of truth, purely in useEffect
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 769px)');
-    const syncNav = (matches: boolean) => setNavOpen(matches);
-    syncNav(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => syncNav(e.matches);
+    const mq = window.matchMedia('(max-width: 768px)');
+    const apply = (mobile: boolean) => {
+      setIsMobile(mobile);
+      setNavOpen(!mobile); // desktop → open by default; mobile → closed
+    };
+    apply(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => apply(e.matches);
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === '/' && !e.ctrlKey && !e.metaKey && document.activeElement?.tagName !== 'INPUT') {
         e.preventDefault(); searchRef.current?.focus();
       }
-      if (e.key === 'Escape') setSelected(null);
+      if (e.key === 'Escape') {
+        if (selected) { setSelected(null); return; }
+        if (isMobile && navOpen) setNavOpen(false);
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [selected, isMobile, navOpen]);
 
   const fuse = useMemo(() => new Fuse(policies, {
     keys: [
@@ -110,9 +121,16 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
 
   const hasFilters = query || riskFilter.length > 0 || catFilter.length > 0;
 
-  return (
-    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', position: 'relative' }}>
+  // Close nav when a filter is picked on mobile
+  const handleNavAction = useCallback((fn: () => void) => {
+    fn();
+    if (isMobile) setNavOpen(false);
+  }, [isMobile]);
 
+  return (
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+
+      {/* ── TOP BAR ── */}
       <header style={{
         height: 'var(--header-h)',
         background: 'var(--primary)',
@@ -207,6 +225,7 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
         </div>
       </header>
 
+      {/* ── STATS BAR ── */}
       <div style={{
         background: 'var(--surface)',
         borderBottom: '1px solid var(--border)',
@@ -232,37 +251,44 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
         )}
       </div>
 
-      {navOpen && (
-        <button
-          aria-label="Close navigation overlay"
-          onClick={() => setNavOpen(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,.35)',
-            zIndex: 39,
-            border: 'none',
-            display: typeof window !== 'undefined' && window.innerWidth <= 768 ? 'block' : 'none',
-          }}
-        />
-      )}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
 
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+        {/* Mobile backdrop — only rendered after mount when isMobile is known */}
+        {isMobile && navOpen && (
+          <div
+            role="presentation"
+            onClick={() => setNavOpen(false)}
+            style={{
+              position: 'fixed', inset: 0,
+              background: 'rgba(0,0,0,.45)',
+              zIndex: 39,
+              backdropFilter: 'blur(2px)',
+            }}
+          />
+        )}
+
+        {/* ── LEFT NAV ── */}
         {navOpen && (
-          <nav style={{
-            width: 'var(--nav-width)', flexShrink: 0,
-            background: 'var(--surface)',
-            borderRight: '1px solid var(--border)',
-            padding: 'var(--space-4) 0',
-            position: typeof window !== 'undefined' && window.innerWidth <= 768 ? 'fixed' : 'sticky',
-            left: 0,
-            top: 'calc(var(--header-h) + 40px)',
-            height: 'calc(100dvh - var(--header-h) - 40px)',
-            overflowY: 'auto',
-            display: 'flex', flexDirection: 'column', gap: 'var(--space-4)',
-            zIndex: 40,
-            boxShadow: 'var(--shadow-3)',
-          }}>
+          <nav
+            aria-label="Filters"
+            style={{
+              width: 'var(--nav-width)', flexShrink: 0,
+              background: 'var(--surface)',
+              borderRight: '1px solid var(--border)',
+              padding: 'var(--space-4) 0',
+              // Desktop: sticky in flow. Mobile: fixed overlay.
+              position: isMobile ? 'fixed' : 'sticky',
+              left: 0,
+              top: isMobile ? 0 : 'calc(var(--header-h) + 40px)',
+              height: isMobile ? '100dvh' : 'calc(100dvh - var(--header-h) - 40px)',
+              paddingTop: isMobile ? 'calc(var(--header-h) + var(--space-4))' : 'var(--space-4)',
+              overflowY: 'auto',
+              display: 'flex', flexDirection: 'column', gap: 'var(--space-4)',
+              zIndex: 40,
+              boxShadow: isMobile ? 'var(--shadow-3)' : 'none',
+              transition: 'transform 220ms cubic-bezier(0.16,1,0.3,1)',
+            }}
+          >
             <NavSection label="Risk Level">
               {RISK_LEVELS.map((r) => (
                 <NavItem
@@ -270,7 +296,7 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
                   label={r}
                   count={statsCount[r] ?? 0}
                   active={riskFilter.includes(r)}
-                  onClick={() => toggleRisk(r)}
+                  onClick={() => handleNavAction(() => toggleRisk(r))}
                   dot={RISK_COLORS[r]}
                 />
               ))}
@@ -286,7 +312,7 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
                     return cats.includes(c);
                   }).length}
                   active={catFilter.includes(c)}
-                  onClick={() => toggleCat(c)}
+                  onClick={() => handleNavAction(() => toggleCat(c))}
                 />
               ))}
             </NavSection>
@@ -308,6 +334,7 @@ export default function Dashboard({ policies }: { policies: Policy[] }) {
           </nav>
         )}
 
+        {/* ── MAIN CONTENT ── */}
         <main style={{ flex: 1, padding: 'var(--space-5) var(--space-6)', overflowX: 'hidden', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
             <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
