@@ -1,7 +1,7 @@
 # PolicyForge ADMX Parser — Dependencies
 
 # Required: CLI framework (hard dependency — script will crash without it)
-click>=8.0.0,<9.0.0
+click>=8.3.3,<9.0.0
 
 # Optional: rich terminal output with progress bars and colored tables
 # rich>=13.0.0,<14.0.0
